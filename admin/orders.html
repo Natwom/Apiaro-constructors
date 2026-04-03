@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders | Apiaro Admin</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-wrapper">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-hard-hat"></i>
+                    <span>APIARO</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                    <li><a href="projects.html"><i class="fas fa-building"></i><span>Projects</span></a></li>
+                    <li><a href="products.html"><i class="fas fa-boxes"></i><span>Products</span></a></li>
+                    <li class="active"><a href="orders.html"><i class="fas fa-shopping-cart"></i><span>Orders</span></a></li>
+                    <li><a href="messages.html"><i class="fas fa-envelope"></i><span>Messages</span></a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="admin-header">
+                <h2>Manage Orders</h2>
+            </header>
+
+            <div class="content-body">
+                <div class="table-card">
+                    <div class="table-header">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search orders..." onkeyup="searchOrders()">
+                        </div>
+                        <select id="filterStatus" onchange="filterOrders()">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Payment</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTable">
+                                <tr><td colspan="8" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Order Details</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="orderDetail">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- FIXED: Correct path to api.js -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let allOrders = [];
+        let currentOrderId = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadOrders();
+        });
+        
+        function checkAuth() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+        
+        async function loadOrders() {
+            const tbody = document.getElementById('ordersTable');
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">Loading orders...</td></tr>';
+            
+            try {
+                console.log('Loading orders...');
+                const orders = await api.getOrders();
+                console.log('Orders loaded:', orders);
+                
+                allOrders = orders;
+                displayOrders(allOrders);
+                
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center error">Error: ${error.message}</td></tr>`;
+            }
+        }
+        
+        function displayOrders(orders) {
+            const tbody = document.getElementById('ordersTable');
+            
+            if (!orders || orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">No orders found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = orders.map(order => {
+                // SAFE parsing of items
+                let items = [];
+                let itemCount = 0;
+                try {
+                    if (order.items) {
+                        items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                        itemCount = Array.isArray(items) ? items.length : 0;
+                    }
+                } catch (e) {
+                    console.error('Error parsing items for order', order.id, e);
+                    itemCount = 0;
+                }
+                
+                return `
+                    <tr>
+                        <td>#${order.id}</td>
+                        <td>
+                            <strong>${escapeHtml(order.customer_name || 'N/A')}</strong><br>
+                            <small>${escapeHtml(order.customer_email || 'No email')}</small>
+                        </td>
+                        <td>${itemCount} item(s)</td>
+                        <td>Ksh ${parseFloat(order.total_amount || 0).toLocaleString()}</td>
+                        <td><span class="status-badge status-${order.status || 'pending'}">${order.status || 'pending'}</span></td>
+                        <td><span class="payment-badge payment-${order.payment_status || 'pending'}">${order.payment_status || 'pending'}</span></td>
+                        <td>${formatDate(order.created_at)}</td>
+                        <td class="actions">
+                            <button class="btn-icon view" onclick="viewOrder(${order.id})" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon edit" onclick="updateStatus(${order.id})" title="Update Status">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            try {
+                return new Date(dateString).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            } catch (e) {
+                return 'Invalid date';
+            }
+        }
+        
+        function searchOrders() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allOrders.filter(o => 
+                (o.customer_name && o.customer_name.toLowerCase().includes(searchTerm)) ||
+                (o.id && o.id.toString().includes(searchTerm))
+            );
+            displayOrders(filtered);
+        }
+        
+        function filterOrders() {
+            const status = document.getElementById('filterStatus').value;
+            const filtered = status ? allOrders.filter(o => o.status === status) : allOrders;
+            displayOrders(filtered);
+        }
+        
+        async function viewOrder(id) {
+            currentOrderId = id;
+            const order = allOrders.find(o => o.id === id);
+            
+            if (!order) {
+                alert('Order not found');
+                return;
+            }
+            
+            // SAFE parsing of items
+            let items = [];
+            try {
+                if (order.items) {
+                    items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                }
+            } catch (e) {
+                console.error('Error parsing items:', e);
+                items = [];
+            }
+            
+            const detailDiv = document.getElementById('orderDetail');
+            
+            detailDiv.innerHTML = `
+                <div class="order-info-grid">
+                    <div class="info-section">
+                        <h4>Customer Information</h4>
+                        <p><strong>Name:</strong> ${escapeHtml(order.customer_name || 'N/A')}</p>
+                        <p><strong>Email:</strong> ${escapeHtml(order.customer_email || 'N/A')}</p>
+                        <p><strong>Phone:</strong> ${escapeHtml(order.customer_phone || 'Not provided')}</p>
+                        <p><strong>Address:</strong> ${escapeHtml(order.customer_address || 'Not provided')}</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>Order Information</h4>
+                        <p><strong>Order ID:</strong> #${order.id}</p>
+                        <p><strong>Date:</strong> ${formatDate(order.created_at)}</p>
+                        <p><strong>Status:</strong> <span class="status-badge status-${order.status || 'pending'}">${order.status || 'pending'}</span></p>
+                        <p><strong>Payment:</strong> <span class="payment-badge payment-${order.payment_status || 'pending'}">${order.payment_status || 'pending'}</span></p>
+                        ${order.mpesa_receipt_number ? `<p><strong>Receipt:</strong> ${order.mpesa_receipt_number}</p>` : ''}
+                        ${order.notes ? `<p><strong>Notes:</strong> ${escapeHtml(order.notes)}</p>` : ''}
+                    </div>
+                </div>
+                
+                <div class="order-items-section">
+                    <h4>Order Items</h4>
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.length > 0 ? items.map(item => `
+                                <tr>
+                                    <td>${escapeHtml(item.product_name || 'Product #' + item.product_id)}</td>
+                                    <td>${item.quantity || 0}</td>
+                                    <td>Ksh ${parseFloat(item.unit_price || item.price || 0).toLocaleString()}</td>
+                                    <td>Ksh ${(parseFloat(item.price || item.unit_price || 0) * (item.quantity || 1)).toLocaleString()}</td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="4">No items</td></tr>'}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3"><strong>Total Amount</strong></td>
+                                <td><strong>Ksh ${parseFloat(order.total_amount || 0).toLocaleString()}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <div class="status-update-section">
+                    <h4>Update Status</h4>
+                    <div class="status-buttons">
+                        <button class="btn ${order.status === 'pending' ? 'btn-primary' : 'btn-secondary'}" 
+                                onclick="changeStatus('pending')" ${order.status === 'pending' ? 'disabled' : ''}>
+                            Pending
+                        </button>
+                        <button class="btn ${order.status === 'processing' ? 'btn-primary' : 'btn-secondary'}" 
+                                onclick="changeStatus('processing')" ${order.status === 'processing' ? 'disabled' : ''}>
+                            Processing
+                        </button>
+                        <button class="btn ${order.status === 'completed' ? 'btn-primary' : 'btn-secondary'}" 
+                                onclick="changeStatus('completed')" ${order.status === 'completed' ? 'disabled' : ''}>
+                            Completed
+                        </button>
+                        <button class="btn ${order.status === 'cancelled' ? 'btn-danger' : 'btn-secondary'}" 
+                                onclick="changeStatus('cancelled')" ${order.status === 'cancelled' ? 'disabled' : ''}>
+                            Cancelled
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('orderModal').style.display = 'block';
+        }
+        
+        async function changeStatus(status) {
+            if (!currentOrderId) return;
+            
+            try {
+                await api.updateOrderStatus(currentOrderId, status);
+                
+                // Update local data
+                const order = allOrders.find(o => o.id === currentOrderId);
+                if (order) {
+                    order.status = status;
+                }
+                
+                displayOrders(allOrders);
+                viewOrder(currentOrderId);
+                alert('Status updated successfully');
+            } catch (error) {
+                alert('Error updating status: ' + error.message);
+            }
+        }
+        
+        function updateStatus(id) {
+            viewOrder(id);
+        }
+        
+        function closeModal() {
+            document.getElementById('orderModal').style.display = 'none';
+            currentOrderId = null;
+        }
+        
+        function logout() {
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Shop quality construction materials - cement, steel, timber, roofing, and more at Apiaro Constructors">
+    <title>Construction Materials | Apiaro Constructors</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="loader" class="loader"><div class="loader-content"><div class="loader-spinner"></div><p>APIARO LTD..</p></div></div>
+
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <span class="logo-text">APIARO</span>
+                <small>Constructors & Supplies</small>
+            </div>
+            <button class="nav-toggle" id="navToggle"><span></span><span></span><span></span></button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About Us</a></li>
+                <li><a href="services.html">Services</a></li>
+                <li><a href="projects.html">Projects</a></li>
+                <li><a href="products.html" class="active">Products</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="#" class="btn-cart" onclick="toggleCart()"><i class="fas fa-shopping-cart"></i> <span id="cartCount">0</span></a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="page-header">
+        <div class="container">
+            <h1>Construction Materials</h1>
+            <nav class="breadcrumb">
+                <a href="index.html">Home</a>
+                <span>/</span>
+                <span>Products</span>
+            </nav>
+        </div>
+    </section>
+
+    <section class="section products-section">
+        <div class="container">
+            <div class="products-layout">
+                <aside class="products-sidebar">
+                    <div class="filter-widget">
+                        <h4>Search Products</h4>
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="Search materials...">
+                            <button onclick="searchProducts()"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-widget">
+                        <h4>Categories</h4>
+                        <ul class="category-list">
+                            <li><button class="category-btn active" data-category="all">All Categories</button></li>
+                            <li><button class="category-btn" data-category="cement">Cement & Concrete</button></li>
+                            <li><button class="category-btn" data-category="steel">Steel & Metals</button></li>
+                            <li><button class="category-btn" data-category="timber">Timber & Wood</button></li>
+                            <li><button class="category-btn" data-category="roofing">Roofing Materials</button></li>
+                            <li><button class="category-btn" data-category="aggregate">Aggregates & Sand</button></li>
+                            <li><button class="category-btn" data-category="plumbing">Plumbing</button></li>
+                            <li><button class="category-btn" data-category="electrical">Electrical</button></li>
+                        </ul>
+                    </div>
+                </aside>
+
+                <div class="products-main">
+                    <div class="products-header">
+                        <p id="resultsCount">Showing all products</p>
+                        <select id="sortSelect" onchange="sortProducts()">
+                            <option value="newest">Newest First</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                        </select>
+                    </div>
+                    
+                    <div class="products-grid" id="productsContainer">
+                        <div class="product-card skeleton">
+                            <div class="product-image skeleton-box"></div>
+                            <div class="product-info">
+                                <div class="skeleton-line"></div>
+                                <div class="skeleton-line short"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="cartSidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3><i class="fas fa-shopping-cart"></i> Your Cart</h3>
+            <button class="close-cart" onclick="toggleCart()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="cartItems">
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cartTotal">ksh 0</span>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="checkout()">Proceed to Checkout</button>
+        </div>
+    </div>
+    <div id="cartOverlay" class="cart-overlay" onclick="toggleCart()"></div>
+
+    <div id="checkoutModal" class="modal">
+        <div class="modal-content checkout-modal">
+            <span class="modal-close" onclick="closeCheckout()">&times;</span>
+            <h2>Complete Your Order</h2>
+            <form id="checkoutForm" onsubmit="submitOrder(event)">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" name="customer_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" name="customer_email" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" name="customer_phone" required>
+                </div>
+                <div class="form-group">
+                    <label>Delivery Address *</label>
+                    <textarea name="customer_address" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Additional Notes</label>
+                    <textarea name="notes" rows="2" placeholder="Any special instructions..."></textarea>
+                </div>
+                <div class="order-summary">
+                    <h4>Order Summary</h4>
+                    <div id="orderSummary"></div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Place Order</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3>APIARO CONSTRUCTORS</h3>
+                    <p>Quality construction materials delivered to your site.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="products.html">Products</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-map-marker-alt"></i> Lodwar, Kenya</p>
+                    <p><i class="fas fa-phone"></i> +256 710 232 335</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Apiaro Constructors. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        let allProducts = [];
+        let currentCategory = 'all';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProducts();
+            setupCategoryFilters();
+            updateCartUI();
+        });
+
+        async function loadProducts() {
+            try {
+                allProducts = await api.getProducts();
+                console.log('Products loaded:', allProducts);
+                displayProducts(allProducts);
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('productsContainer').innerHTML = 
+                    '<p class="text-center error">Failed to load products. Please try again later.</p>';
+            }
+        }
+
+        function displayProducts(products) {
+            const container = document.getElementById('productsContainer');
+            document.getElementById('resultsCount').textContent = `Showing ${products.length} products`;
+            
+            if (products.length === 0) {
+                container.innerHTML = '<p class="text-center">No products found.</p>';
+                return;
+            }
+
+            container.innerHTML = products.map(product => {
+                const rawImagePath = product.images && product.images.length > 0 ? product.images[0] : '';
+                
+                return `
+                <div class="product-card animate-on-scroll" data-category="${product.category}">
+                    <div class="product-image">
+                        <img src="${product.image_url}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
+                        ${product.featured ? '<span class="product-badge">Featured</span>' : ''}
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">${product.category || 'Uncategorized'}</span>
+                        <h3>${product.name}</h3>
+                        <p class="product-description">${product.description || ''}</p>
+                        <div class="product-footer">
+                            <span class="product-price">Ksh ${parseFloat(product.price).toLocaleString()}<small>/${product.unit || 'unit'}</small></span>
+                            <button class="btn btn-add-cart" onclick="addToCart(${product.id}, '${product.name}', ${product.price}, '${rawImagePath}')">
+                                <i class="fas fa-cart-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+            
+            initScrollAnimations();
+        }
+
+        function setupCategoryFilters() {
+            const categoryBtns = document.querySelectorAll('.category-btn');
+            categoryBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    categoryBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    currentCategory = this.getAttribute('data-category');
+                    filterProducts();
+                });
+            });
+        }
+
+        function filterProducts() {
+            let filtered = allProducts;
+            
+            if (currentCategory !== 'all') {
+                filtered = filtered.filter(p => p.category === currentCategory);
+            }
+            
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(p => 
+                    p.name.toLowerCase().includes(searchTerm) || 
+                    (p.description && p.description.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            displayProducts(filtered);
+        }
+
+        function searchProducts() {
+            filterProducts();
+        }
+
+        function sortProducts() {
+            const sortValue = document.getElementById('sortSelect').value;
+            let sorted = [...allProducts];
+            
+            if (currentCategory !== 'all') {
+                sorted = sorted.filter(p => p.category === currentCategory);
+            }
+            
+            switch(sortValue) {
+                case 'price-low':
+                    sorted.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+                    break;
+                case 'price-high':
+                    sorted.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+                    break;
+                case 'newest':
+                default:
+                    sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            }
+            
+            displayProducts(sorted);
+        }
+
+        function toggleCart() {
+            document.getElementById('cartSidebar').classList.toggle('open');
+            document.getElementById('cartOverlay').classList.toggle('show');
+            document.body.classList.toggle('cart-open');
+        }
+
+        function checkout() {
+            const cart = getCart();
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+            toggleCart();
+            document.getElementById('checkoutModal').style.display = 'block';
+            updateOrderSummary();
+        }
+
+        function closeCheckout() {
+            document.getElementById('checkoutModal').style.display = 'none';
+        }
+
+        function updateOrderSummary() {
+            const cart = getCart();
+            const summary = document.getElementById('orderSummary');
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            summary.innerHTML = cart.map(item => `
+                <div class="summary-item">
+                    <span>${item.name} x ${item.quantity}</span>
+                    <span>Ksh ${(item.price * item.quantity).toLocaleString()}</span>
+                </div>
+            `).join('') + `
+                <div class="summary-total">
+                    <span>Total</span>
+                    <span>Ksh ${total.toLocaleString()}</span>
+                </div>
+            `;
+        }
+
+        async function submitOrder(e) {
+            e.preventDefault();
+            const form = e.target;
+            const cart = getCart();
+            
+            const orderData = {
+                customer_name: form.customer_name.value,
+                customer_email: form.customer_email.value,
+                customer_phone: form.customer_phone.value,
+                customer_address: form.customer_address.value,
+                notes: form.notes.value,
+                items: cart.map(item => ({
+                    product_id: item.id,
+                    quantity: item.quantity,
+                    price: item.price
+                }))
+            };
+            
+            try {
+                await api.createOrder(orderData);
+                alert('Order placed successfully! We will contact you shortly.');
+                clearCart();
+                closeCheckout();
+                form.reset();
+            } catch (error) {
+                alert('Failed to place order. Please try again.');
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

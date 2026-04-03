@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Projects | Apiaro Constructors</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="nav-brand">
+                <span class="logo-text">APIARO</span>
+                <small>General Contractors</small>
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="services.html">Services</a></li>
+                <li><a href="projects.html" class="active">Projects</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            <button class="nav-toggle" id="navToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <h1>Our Projects</h1>
+            <div class="breadcrumb">
+                <a href="index.html">Home</a>
+                <i class="fas fa-chevron-right"></i>
+                <span>Projects</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Projects Section -->
+    <section class="section">
+        <div class="container">
+            <!-- Filter Buttons -->
+            <div class="projects-filter">
+                <button class="filter-btn active" data-filter="all">All Projects</button>
+                <button class="filter-btn" data-filter="building">Building</button>
+                <button class="filter-btn" data-filter="road">Road Works</button>
+                <button class="filter-btn" data-filter="renovation">Renovation</button>
+            </div>
+
+            <!-- Projects Grid -->
+            <div id="projects-container" class="projects-grid">
+                <!-- Projects will be loaded here -->
+                <div class="skeleton-box" style="height: 300px; border-radius: 12px;"></div>
+                <div class="skeleton-box" style="height: 300px; border-radius: 12px;"></div>
+                <div class="skeleton-box" style="height: 300px; border-radius: 12px;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Have a Project in Mind?</h2>
+                <p>Let's discuss how we can help bring your construction vision to life.</p>
+                <a href="contact.html" class="btn btn-white">Get a Quote</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3>APIARO</h3>
+                    <p>Building Tomorrow's Infrastructure Today. Quality construction services across Kenya.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="services.html">Services</a></li>
+                        <li><a href="projects.html">Projects</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-services">
+                    <h4>Services</h4>
+                    <ul>
+                        <li><a href="#">Building Construction</a></li>
+                        <li><a href="#">Road Works</a></li>
+                        <li><a href="#">Renovation</a></li>
+                        <li><a href="#">Supply Management</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contact Us</h4>
+                    <p><i class="fas fa-map-marker-alt"></i> Lodwar, Turkana County, Kenya</p>
+                    <p><i class="fas fa-phone"></i> +254 710 232 335</p>
+                    <p><i class="fas fa-envelope"></i> info@apiaro.co.ke</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Apiaro Constructors. All rights reserved.</p>
+                <div class="admin-link">
+                    <a href="http://localhost:3001/login.html"><i class="fas fa-lock"></i> Admin</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Project Detail Modal -->
+    <div id="projectModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div class="modal-body">
+                <div class="modal-gallery">
+                    <img id="modalImage" src="" alt="" class="modal-main-image">
+                </div>
+                <div class="modal-details">
+                    <span id="modalCategory" class="product-category"></span>
+                    <h2 id="modalTitle"></h2>
+                    <p id="modalDescription" class="project-description"></p>
+                    <div class="project-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span id="modalLocation"></span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span id="modalDate"></span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-user"></i>
+                            <span id="modalClient"></span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-money-bill"></i>
+                            <span id="modalBudget"></span>
+                        </div>
+                    </div>
+                    <span id="modalStatus" class="project-status"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        // Mobile Navigation Toggle
+        const navToggle = document.getElementById('navToggle');
+        const navMenu = document.getElementById('navMenu');
+        
+        navToggle.addEventListener('click', () => {
+            navMenu.classList.toggle('active');
+            navToggle.classList.toggle('active');
+        });
+
+        // Filter functionality
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        let allProjects = [];
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const filter = btn.dataset.filter;
+                const filtered = filter === 'all' 
+                    ? allProjects 
+                    : allProjects.filter(p => p.category === filter);
+                displayProjects(filtered);
+            });
+        });
+
+        async function loadProjects() {
+            const container = document.getElementById('projects-container');
+            
+            try {
+                const projects = await api.getProjects();
+                allProjects = projects;
+                
+                if (projects.length === 0) {
+                    container.innerHTML = '<p class="text-center">No projects found.</p>';
+                    return;
+                }
+                
+                displayProjects(projects);
+                
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                container.innerHTML = '<p class="text-center error">Error loading projects. Please try again later.</p>';
+            }
+        }
+
+        function displayProjects(projects) {
+            const container = document.getElementById('projects-container');
+            
+            container.innerHTML = projects.map(project => `
+                <div class="project-card" onclick="openModal(${project.id})">
+                    <div class="project-image">
+                        <img src="${project.image_url}" alt="${project.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
+                        <div class="project-overlay">
+                            <span class="view-project">View Details</span>
+                        </div>
+                        ${project.featured ? '<span class="project-badge">Featured</span>' : ''}
+                    </div>
+                    <div class="project-info">
+                        <h3>${project.title}</h3>
+                        <p class="project-location">
+                            <i class="fas fa-map-marker-alt"></i> ${project.location || 'Location not specified'}
+                        </p>
+                        <span class="project-status status-${project.status}">${project.status}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openModal(projectId) {
+            const project = allProjects.find(p => p.id === projectId);
+            if (!project) return;
+            
+            document.getElementById('modalImage').src = project.image_url;
+            document.getElementById('modalCategory').textContent = project.category;
+            document.getElementById('modalTitle').textContent = project.title;
+            document.getElementById('modalDescription').textContent = project.description || 'No description available.';
+            document.getElementById('modalLocation').textContent = project.location || 'Not specified';
+            document.getElementById('modalDate').textContent = `${project.start_date || 'N/A'} - ${project.end_date || 'N/A'}`;
+            document.getElementById('modalClient').textContent = project.client_name || 'Not specified';
+            document.getElementById('modalBudget').textContent = project.budget ? `KES ${parseFloat(project.budget).toLocaleString()}` : 'Not disclosed';
+            
+            const statusEl = document.getElementById('modalStatus');
+            statusEl.textContent = project.status;
+            statusEl.className = `project-status status-${project.status}`;
+            
+            document.getElementById('projectModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('projectModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('projectModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Load projects when page loads
+        document.addEventListener('DOMContentLoaded', loadProjects);
+    </script>
+</body>
+</html>

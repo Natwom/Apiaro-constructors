@@ -1,0 +1,246 @@
+/* Apiaro Admin - Dashboard Specific Styles */
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-icon.projects {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.stat-icon.products {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.stat-icon.messages {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.stat-icon.orders {
+    background: #fce7f3;
+    color: #db2777;
+}
+
+.stat-info h3 {
+    font-size: 2rem;
+    margin: 0;
+    color: #111827;
+}
+
+.stat-info p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #111827;
+}
+
+.view-all {
+    color: #f97316;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.view-all:hover {
+    text-decoration: underline;
+}
+
+/* Message List in Dashboard */
+.message-list {
+    padding: 1rem;
+}
+
+.message-item {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    transition: background 0.2s;
+}
+
+.message-item:hover {
+    background: #f9fafb;
+}
+
+.message-item:last-child {
+    border-bottom: none;
+}
+
+.message-avatar {
+    width: 40px;
+    height: 40px;
+    background: #e5e7eb;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    flex-shrink: 0;
+}
+
+.message-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-content h4 {
+    margin: 0 0 0.25rem;
+    font-size: 0.95rem;
+    color: #111827;
+}
+
+.message-content p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    white-space: nowrap;
+}
+
+/* Quick Actions */
+.quick-actions {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.quick-actions h3 {
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+    color: #111827;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 2rem;
+    background: #f9fafb;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #374151;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.action-btn i {
+    font-size: 1.5rem;
+    color: #f97316;
+}
+
+.action-btn span {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.action-btn:hover {
+    background: #f97316;
+    color: white;
+    transform: translateY(-3px);
+}
+
+.action-btn:hover i {
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        justify-content: center;
+    }
+    
+    .action-btn {
+        flex: 1;
+        min-width: 100px;
+    }
+}

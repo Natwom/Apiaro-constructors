@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Apiaro Constructors and Supplies Company Limited - Leading construction and building supplies company in Uganda">
+    <meta name="keywords" content="construction, building supplies, contractors, Uganda, Kampala">
+    <title>Apiaro Constructors | Building Tomorrow's Infrastructure Today</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loader" class="loader">
+        <div class="loader-content">
+            <div class="loader-spinner"></div>
+            <p>APIARO LTD...</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <img src="assets/images/logo.png" alt="Apiaro Logo" class="logo-img" onerror="this.style.display='none'">
+                <span class="logo-text">APIARO</span>
+                <small>Constructors & Supplies</small>
+            </div>
+            <button class="nav-toggle" id="navToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="about.html">About Us</a></li>
+                <li><a href="services.html">Services</a></li>
+                <li><a href="projects.html">Projects</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="products.html" class="btn-cart"><i class="fas fa-shopping-cart"></i> <span id="cartCount">0</span></a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg">
+            <div class="hero-overlay"></div>
+        </div>
+        <div class="hero-content">
+            <h1 class="hero-title animate-fade-up">Building Tomorrow's Infrastructure Today</h1>
+            <p class="hero-subtitle animate-fade-up delay-1">Quality Construction & Reliable Building Supplies Since 2010</p>
+            <div class="hero-buttons animate-fade-up delay-2">
+                <a href="contact.html" class="btn btn-primary">Request a Quote</a>
+                <a href="projects.html" class="btn btn-outline">View Our Work</a>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <span>Scroll Down</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </section>
+
+    <!-- Services Overview -->
+    <section class="section services-overview">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Our Services</h2>
+                <p class="section-subtitle">Comprehensive construction solutions tailored to your needs</p>
+            </div>
+            <div class="services-grid">
+                <div class="service-card animate-on-scroll">
+                    <div class="service-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3>Building Construction</h3>
+                    <p>From residential homes to commercial complexes, we deliver quality structures that stand the test of time.</p>
+                    <a href="services.html" class="link-arrow">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="service-card animate-on-scroll">
+                    <div class="service-icon">
+                        <i class="fas fa-road"></i>
+                    </div>
+                    <h3>Road Works</h3>
+                    <p>Expert road construction and maintenance services for public and private infrastructure projects.</p>
+                    <a href="services.html" class="link-arrow">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="service-card animate-on-scroll">
+                    <div class="service-icon">
+                        <i class="fas fa-hammer"></i>
+                    </div>
+                    <h3>Renovation & Remodeling</h3>
+                    <p>Transform existing spaces with our professional renovation and remodeling services.</p>
+                    <a href="services.html" class="link-arrow">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="service-card animate-on-scroll">
+                    <div class="service-icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <h3>Material Supplies</h3>
+                    <p>Premium quality construction materials delivered to your site on time, every time.</p>
+                    <a href="products.html" class="link-arrow">Shop Now <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Projects -->
+    <section class="section featured-projects bg-light">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Featured Projects</h2>
+                <p class="section-subtitle">Showcasing our finest work across Kenya</p>
+            </div>
+            <div class="projects-grid" id="featuredProjects">
+                <!-- Projects loaded dynamically -->
+            </div>
+            <div class="text-center mt-4">
+                <a href="projects.html" class="btn btn-secondary">View All Projects</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item animate-on-scroll">
+                    <span class="stat-number" data-count="150">0</span>
+                    <span class="stat-label">Projects Completed</span>
+                </div>
+                <div class="stat-item animate-on-scroll">
+                    <span class="stat-number" data-count="13">0</span>
+                    <span class="stat-label">Years Experience</span>
+                </div>
+                <div class="stat-item animate-on-scroll">
+                    <span class="stat-number" data-count="500">0</span>
+                    <span class="stat-label">Happy Clients</span>
+                </div>
+                <div class="stat-item animate-on-scroll">
+                    <span class="stat-number" data-count="50">0</span>
+                    <span class="stat-label">Team Members</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Ready to Start Your Project?</h2>
+                <p>Get a free consultation and quote for your construction needs</p>
+                <a href="contact.html" class="btn btn-white">Get Free Quote</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3>APIARO CONSTRUCTORS</h3>
+                    <p>Building quality infrastructure and providing reliable construction supplies across Kenya since 2010.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="services.html">Services</a></li>
+                        <li><a href="projects.html">Projects</a></li>
+                        <li><a href="products.html">Products</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-services">
+                    <h4>Our Services</h4>
+                    <ul>
+                        <li><a href="services.html">Building Construction</a></li>
+                        <li><a href="services.html">Road Works</a></li>
+                        <li><a href="services.html">Renovation</a></li>
+                        <li><a href="services.html">Material Supplies</a></li>
+                        <li><a href="services.html">Equipment Hire</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contact Info</h4>
+                    <p><i class="fas fa-map-marker-alt"></i> Plot 45, Lokori Road, Lodwar, Kenya</p>
+                    <p><i class="fas fa-phone"></i> +254 710 232 335</p>
+                    <p><i class="fas fa-envelope"></i> apiarosupport@gmail.com</p>
+                    <p><i class="fas fa-clock"></i> Mon - sun: 8:00 AM - 6:00 PM</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Apiaro Constructors and Supplies Company Limited. All rights reserved.</p>
+                <p class="admin-link"><a href="../admin/login.html">Admin Login</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
