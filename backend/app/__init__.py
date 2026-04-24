@@ -18,12 +18,12 @@ def create_app(config_name='default'):
     
     # CRITICAL: Enable CORS for ALL routes including uploads
     CORS(app, resources={
-        r"/*": {  # Changed from /api/* to /* to cover all routes
+        r"/*": {
             "origins": "*",
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
             "allow_headers": ["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
             "expose_headers": ["Content-Type", "Authorization"],
-            "supports_credentials": False,  # Changed to False to avoid credential issues
+            "supports_credentials": False,
             "send_wildcard": True
         }
     })
@@ -31,13 +31,11 @@ def create_app(config_name='default'):
     # Global after_request handler to ensure CORS headers on ALL responses
     @app.after_request
     def after_request(response):
-        # Add CORS headers to every response
         response.headers['Access-Control-Allow-Origin'] = '*'
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, HEAD'
         response.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type, Accept, Origin, X-Requested-With'
         response.headers['Access-Control-Expose-Headers'] = 'Content-Type, Authorization'
         
-        # Handle preflight
         if request.method == 'OPTIONS':
             response.status_code = 200
             
@@ -64,7 +62,36 @@ def create_app(config_name='default'):
     def expired_token_callback(jwt_header, jwt_payload):
         return {'success': False, 'message': 'Token expired'}, 401
     
-    # Register blueprints
+    # ============================================
+    # CRITICAL FIX: Add root API endpoint
+    # ============================================
+    @app.route('/api', methods=['GET'])
+    def api_root():
+        return jsonify({
+            'success': True,
+            'message': 'Apiaro Constructors API',
+            'version': '1.0.0',
+            'status': 'running',
+            'endpoints': {
+                'auth': '/api/login, /api/verify',
+                'projects': '/api/projects',
+                'products': '/api/products',
+                'messages': '/api/messages',
+                'orders': '/api/orders'
+            }
+        }), 200
+    
+    @app.route('/api/health', methods=['GET'])
+    def health_check():
+        return jsonify({
+            'success': True,
+            'status': 'healthy',
+            'service': 'apiaro-backend'
+        }), 200
+    
+    # ============================================
+    # REGISTER BLUEPRINTS
+    # ============================================
     from app.routes.auth import auth_bp
     from app.routes.projects import projects_bp
     from app.routes.products import products_bp
@@ -87,44 +114,62 @@ def create_app(config_name='default'):
     
     print(f'📁 Upload folder: {upload_folder}')
     
-    # CRITICAL: Serve uploaded files with explicit CORS headers
+    # ============================================
+    # SINGLE UPLOAD ROUTE HANDLER
+    # ============================================
     @app.route('/uploads/<path:filename>')
     def serve_upload(filename):
         try:
-            file_path = os.path.join(upload_folder, filename)
+            # Security: Prevent directory traversal
+            safe_path = os.path.normpath(filename)
+            if safe_path.startswith('..') or safe_path.startswith('/'):
+                print(f'❌ Invalid path attempt: {filename}')
+                return jsonify({'error': 'Invalid path'}), 400
+            
+            file_path = os.path.join(upload_folder, safe_path)
+            
             if not os.path.exists(file_path):
                 print(f'❌ File not found: {file_path}')
-                return jsonify({'error': 'File not found'}), 404
+                return jsonify({'error': 'File not found', 'path': safe_path}), 404
                 
-            response = send_from_directory(upload_folder, filename)
-            # Add CORS headers explicitly
+            response = send_from_directory(upload_folder, safe_path)
             response.headers['Access-Control-Allow-Origin'] = '*'
             response.headers['Cache-Control'] = 'public, max-age=31536000'
             print(f'📸 Serving: {filename}')
             return response
+            
         except Exception as e:
             print(f'❌ Error serving file: {e}')
             return jsonify({'error': str(e)}), 500
     
-    @app.route('/uploads/projects/<path:filename>')
-    def serve_project_upload(filename):
-        try:
-            response = send_from_directory(projects_folder, filename)
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            response.headers['Cache-Control'] = 'public, max-age=31536000'
-            return response
-        except Exception as e:
-            return jsonify({'error': str(e)}), 404
+    # Error handlers
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({
+            'success': False,
+            'error': 'Endpoint not found',
+            'message': f'The requested URL {request.path} was not found on the server.',
+            'available_endpoints': [
+                '/api',
+                '/api/health',
+                '/api/login',
+                '/api/verify',
+                '/api/projects',
+                '/api/products',
+                '/api/messages',
+                '/api/orders',
+                '/uploads/<path>'
+            ]
+        }), 404
     
-    @app.route('/uploads/products/<path:filename>')
-    def serve_product_upload(filename):
-        try:
-            response = send_from_directory(products_folder, filename)
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            response.headers['Cache-Control'] = 'public, max-age=31536000'
-            return response
-        except Exception as e:
-            return jsonify({'error': str(e)}), 404
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error',
+            'message': str(error)
+        }), 500
     
     # Create database tables
     with app.app_context():
