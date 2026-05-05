@@ -95,7 +95,7 @@ function updateCartUI() {
             cartItems.innerHTML = cart.map(item => `
                 <div class="cart-item">
                     <div class="cart-item-image">
-                        <img src="${item.image ? 'http://localhost:5000/' + item.image : 'https://via.placeholder.com/80?text=No+Image'}" alt="${item.name}">
+                       <img src="${item.image ? 'https://apiaro-constructors.onrender.com/' + item.image : 'https://via.placeholder.com/80?text=No+Image'}" alt="${item.name}">
                     </div>
                     <div class="cart-item-details">
                         <h4>${item.name}</h4>

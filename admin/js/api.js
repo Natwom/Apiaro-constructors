@@ -1,5 +1,9 @@
-const API_BASE_URL = 'http://localhost:5000/api';
-const UPLOADS_BASE_URL = 'http://localhost:5000/uploads';
+// ============================================
+// CONFIG: Change this ONE line for any environment
+// ============================================
+const BASE_URL = 'https://apiaro-constructors.onrender.com';
+const API_BASE_URL = BASE_URL + '/api';
+const UPLOADS_BASE_URL = BASE_URL + '/uploads';
 
 const api = {
     getToken() {
@@ -23,15 +27,15 @@ const api = {
         }
         
         if (path.startsWith('/uploads/')) {
-            return `http://localhost:5000${path}`;
+            return `${BASE_URL}${path}`;
         }
         
         if (path.startsWith('uploads/')) {
-            return `http://localhost:5000/${path}`;
+            return `${BASE_URL}/${path}`;
         }
         
         if (!path.includes('/')) {
-            return `http://localhost:5000/uploads/products/${path}`;
+            return `${BASE_URL}/uploads/products/${path}`;
         }
         
         return `${UPLOADS_BASE_URL}/${path}`;
@@ -312,7 +316,6 @@ const api = {
         }
     },
 
-    // FIXED: getOrders - no token parameter needed, uses getAuthHeaders()
     async getOrders() {
         try {
             console.log('Fetching orders...');
@@ -345,7 +348,6 @@ const api = {
         }
     },
 
-    // FIXED: updateOrderStatus - no token parameter needed
     async updateOrderStatus(id, status) {
         try {
             const response = await fetch(`${API_BASE_URL}/orders/${id}/status`, {

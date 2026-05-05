@@ -1,5 +1,9 @@
-const API_BASE_URL = 'http://localhost:5000/api';
-const UPLOADS_BASE_URL = 'http://localhost:5000/uploads';
+// ============================================
+// CONFIG: Change this ONE line for any environment
+// ============================================
+const BASE_URL = 'https://apiaro-constructors.onrender.com';
+const API_BASE_URL = BASE_URL + '/api';
+const UPLOADS_BASE_URL = BASE_URL + '/uploads';
 
 const api = {
     getImageUrl(imagePath) {
@@ -14,15 +18,15 @@ const api = {
         }
         
         if (path.startsWith('/uploads/')) {
-            return `http://localhost:5000${path}`;
+            return `${BASE_URL}${path}`;
         }
         
         if (path.startsWith('uploads/')) {
-            return `http://localhost:5000/${path}`;
+            return `${BASE_URL}/${path}`;
         }
         
         if (!path.includes('/')) {
-            return `http://localhost:5000/uploads/products/${path}`;
+            return `${BASE_URL}/uploads/products/${path}`;
         }
         
         return `${UPLOADS_BASE_URL}/${path}`;

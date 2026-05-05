@@ -3,11 +3,17 @@
 const TOKEN_KEY = 'admin_token';
 const USER_KEY = 'admin_user';
 
+// ============================================
+// CONFIG: Change this ONE line for any environment
+// ============================================
+const BASE_URL = 'https://apiaro-constructors.onrender.com';
+const API_URL = BASE_URL + '/api';
+
 async function login(username, password) {
     try {
         console.log('🔐 Attempting login...');
         
-        const response = await fetch('http://localhost:5000/api/login', {
+        const response = await fetch(`${API_URL}/login`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -129,39 +135,39 @@ async function apiFetch(url, options = {}) {
 // ==================== API METHODS ====================
 
 async function getMessages() {
-    const response = await apiFetch('http://localhost:5000/api/messages');
+    const response = await apiFetch(`${API_URL}/messages`);
     const data = await response.json();
     return data.messages || data;
 }
 
 async function getMessage(id) {
-    const response = await apiFetch(`http://localhost:5000/api/messages/${id}`);
+    const response = await apiFetch(`${API_URL}/messages/${id}`);
     const data = await response.json();
     return data.message || data;
 }
 
 async function markMessageAsRead(id) {
-    const response = await apiFetch(`http://localhost:5000/api/messages/${id}/read`, {
+    const response = await apiFetch(`${API_URL}/messages/${id}/read`, {
         method: 'PUT'
     });
     return response.json();
 }
 
 async function deleteMessage(id) {
-    const response = await apiFetch(`http://localhost:5000/api/messages/${id}`, {
+    const response = await apiFetch(`${API_URL}/messages/${id}`, {
         method: 'DELETE'
     });
     return response.json();
 }
 
 async function getProjects() {
-    const response = await apiFetch('http://localhost:5000/api/projects');
+    const response = await apiFetch(`${API_URL}/projects`);
     const data = await response.json();
     return data.projects || data;
 }
 
 async function createProject(formData) {
-    const response = await apiFetch('http://localhost:5000/api/projects', {
+    const response = await apiFetch(`${API_URL}/projects`, {
         method: 'POST',
         body: formData
     });
@@ -169,7 +175,7 @@ async function createProject(formData) {
 }
 
 async function updateProject(id, formData) {
-    const response = await apiFetch(`http://localhost:5000/api/projects/${id}`, {
+    const response = await apiFetch(`${API_URL}/projects/${id}`, {
         method: 'PUT',
         body: formData
     });
@@ -177,20 +183,20 @@ async function updateProject(id, formData) {
 }
 
 async function deleteProject(id) {
-    const response = await apiFetch(`http://localhost:5000/api/projects/${id}`, {
+    const response = await apiFetch(`${API_URL}/projects/${id}`, {
         method: 'DELETE'
     });
     return response.json();
 }
 
 async function getProducts() {
-    const response = await apiFetch('http://localhost:5000/api/products');
+    const response = await apiFetch(`${API_URL}/products`);
     const data = await response.json();
     return data.products || data;
 }
 
 async function createProduct(formData) {
-    const response = await apiFetch('http://localhost:5000/api/products', {
+    const response = await apiFetch(`${API_URL}/products`, {
         method: 'POST',
         body: formData
     });
@@ -198,7 +204,7 @@ async function createProduct(formData) {
 }
 
 async function updateProduct(id, formData) {
-    const response = await apiFetch(`http://localhost:5000/api/products/${id}`, {
+    const response = await apiFetch(`${API_URL}/products/${id}`, {
         method: 'PUT',
         body: formData
     });
@@ -206,20 +212,20 @@ async function updateProduct(id, formData) {
 }
 
 async function deleteProduct(id) {
-    const response = await apiFetch(`http://localhost:5000/api/products/${id}`, {
+    const response = await apiFetch(`${API_URL}/products/${id}`, {
         method: 'DELETE'
     });
     return response.json();
 }
 
 async function getOrders() {
-    const response = await apiFetch('http://localhost:5000/api/orders');
+    const response = await apiFetch(`${API_URL}/orders`);
     const data = await response.json();
     return data.orders || data;
 }
 
 async function updateOrderStatus(id, status) {
-    const response = await apiFetch(`http://localhost:5000/api/orders/${id}/status`, {
+    const response = await apiFetch(`${API_URL}/orders/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -228,7 +234,7 @@ async function updateOrderStatus(id, status) {
 }
 
 async function deleteOrder(id) {
-    const response = await apiFetch(`http://localhost:5000/api/orders/${id}`, {
+    const response = await apiFetch(`${API_URL}/orders/${id}`, {
         method: 'DELETE'
     });
     return response.json();
