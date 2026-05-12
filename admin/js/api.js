@@ -1,5 +1,5 @@
 // ============================================
-// CONFIG: Change this ONE line for any environment
+// Apiaro Admin API Client
 // ============================================
 const BASE_URL = 'https://apiaro-constructors.onrender.com';
 const API_BASE_URL = BASE_URL + '/api';
@@ -21,79 +21,117 @@ const api = {
         }
         
         let path = String(imagePath).trim();
-        
         if (path.startsWith('http://') || path.startsWith('https://')) {
             return path;
         }
-        
         if (path.startsWith('/uploads/')) {
             return `${BASE_URL}${path}`;
         }
-        
         if (path.startsWith('uploads/')) {
             return `${BASE_URL}/${path}`;
         }
-        
         if (!path.includes('/')) {
             return `${BASE_URL}/uploads/products/${path}`;
         }
-        
         return `${UPLOADS_BASE_URL}/${path}`;
     },
 
+    // ============================================
+    // Auth utilities (mirrored from auth.js)
+    // ============================================
     async login(credentials) {
         try {
             const response = await fetch(`${API_BASE_URL}/login`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify(credentials)
             });
-            return this.handleResponse(response);
+            const data = await this.handleResponse(response);
+            if (data.access_token) {
+                localStorage.setItem('admin_token', data.access_token);
+                localStorage.setItem('admin_user', JSON.stringify(data.user));
+            }
+            return data;
         } catch (error) {
             console.error('Login error:', error);
             throw error;
         }
     },
 
-    async verifyToken(token) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/verify`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Verify token error:', error);
-            throw error;
-        }
+    logout() {
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_user');
+        window.location.href = 'login.html';
     },
 
+    getUser() {
+        const user = localStorage.getItem('admin_user');
+        return user ? JSON.parse(user) : null;
+    },
+
+    isAuthenticated() {
+        return !!this.getToken();
+    },
+
+    async checkAuth() {
+        const token = this.getToken();
+        if (!token) {
+            window.location.href = 'login.html';
+            return false;
+        }
+        const user = this.getUser();
+        if (user) {
+            const el = document.getElementById('username');
+            if (el) el.textContent = user.full_name || user.username;
+        }
+        return true;
+    },
+
+    // ============================================
+    // Smart fetch with 401 handling
+    // ============================================
+    async apiFetch(url, options = {}) {
+        const headers = this.getAuthHeaders();
+        if (options.body instanceof FormData) {
+            delete headers['Content-Type'];
+        }
+        const response = await fetch(url, {
+            ...options,
+            headers: { ...headers, ...(options.headers || {}) }
+        });
+        if (response.status === 401) {
+            this.logout();
+            throw new Error('Session expired. Please login again.');
+        }
+        return response;
+    },
+
+    // ============================================
+    // Projects
+    // ============================================
     async getProjects() {
         try {
             const response = await fetch(`${API_BASE_URL}/projects`, {
                 headers: this.getAuthHeaders()
             });
             const data = await this.handleResponse(response);
-            
-            const projects = (data.projects || []).map(p => {
+            return (data.projects || []).map(p => {
                 let imagesArray = [];
                 if (p.images) {
                     try {
                         imagesArray = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
-                    } catch (e) {
-                        imagesArray = [];
-                    }
+                    } catch (e) { imagesArray = []; }
                 }
-                
                 const firstImage = p.image_url || (imagesArray.length > 0 ? imagesArray[0] : '');
-                
                 return {
                     ...p,
                     image_url: this.getImageUrl(firstImage),
                     images: imagesArray.map(img => this.getImageUrl(img))
                 };
             });
-            
-            return projects;
         } catch (error) {
             console.error('Get projects error:', error);
             return [];
@@ -107,22 +145,17 @@ const api = {
             });
             const data = await this.handleResponse(response);
             const project = data.project;
-            
             if (project) {
                 let imagesArray = [];
                 if (project.images) {
                     try {
                         imagesArray = typeof project.images === 'string' ? JSON.parse(project.images) : project.images;
-                    } catch (e) {
-                        imagesArray = [];
-                    }
+                    } catch (e) { imagesArray = []; }
                 }
-                
                 const firstImage = project.image_url || (imagesArray.length > 0 ? imagesArray[0] : '');
                 project.image_url = this.getImageUrl(firstImage);
                 project.images = imagesArray.map(img => this.getImageUrl(img));
             }
-            
             return project;
         } catch (error) {
             console.error('Get project error:', error);
@@ -131,65 +164,45 @@ const api = {
     },
 
     async createProject(formData) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/projects`, {
-                method: 'POST',
-                headers: this.getAuthHeaders(),
-                body: formData
-            });
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Create project error:', error);
-            throw error;
-        }
+        const response = await this.apiFetch(`${API_BASE_URL}/projects`, {
+            method: 'POST',
+            body: formData
+        });
+        return this.handleResponse(response);
     },
 
     async updateProject(id, formData) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
-                method: 'PUT',
-                headers: this.getAuthHeaders(),
-                body: formData
-            });
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Update project error:', error);
-            throw error;
-        }
+        const response = await this.apiFetch(`${API_BASE_URL}/projects/${id}`, {
+            method: 'PUT',
+            body: formData
+        });
+        return this.handleResponse(response);
     },
 
     async deleteProject(id) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
-                method: 'DELETE',
-                headers: this.getAuthHeaders()
-            });
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Delete project error:', error);
-            throw error;
-        }
+        const response = await this.apiFetch(`${API_BASE_URL}/projects/${id}`, {
+            method: 'DELETE'
+        });
+        return this.handleResponse(response);
     },
 
+    // ============================================
+    // Products
+    // ============================================
     async getProducts() {
         try {
             const response = await fetch(`${API_BASE_URL}/products`, {
                 headers: this.getAuthHeaders()
             });
             const data = await this.handleResponse(response);
-            
-            const products = (data.products || []).map(p => {
+            return (data.products || []).map(p => {
                 let imagesArray = [];
                 if (p.images) {
                     try {
                         imagesArray = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
-                    } catch (e) {
-                        imagesArray = [];
-                    }
+                    } catch (e) { imagesArray = []; }
                 }
-                
                 const firstImage = p.image_url || (imagesArray.length > 0 ? imagesArray[0] : null);
-                
                 return {
                     ...p,
                     image: this.getImageUrl(firstImage),
@@ -197,8 +210,6 @@ const api = {
                     images: imagesArray.map(img => this.getImageUrl(img))
                 };
             });
-            
-            return products;
         } catch (error) {
             console.error('Get products error:', error);
             return [];
@@ -212,23 +223,18 @@ const api = {
             });
             const data = await this.handleResponse(response);
             const product = data.product;
-            
             if (product) {
                 let imagesArray = [];
                 if (product.images) {
                     try {
                         imagesArray = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
-                    } catch (e) {
-                        imagesArray = [];
-                    }
+                    } catch (e) { imagesArray = []; }
                 }
-                
                 const firstImage = product.image_url || (imagesArray.length > 0 ? imagesArray[0] : null);
                 product.image = this.getImageUrl(firstImage);
                 product.image_url = this.getImageUrl(firstImage);
                 product.images = imagesArray.map(img => this.getImageUrl(img));
             }
-            
             return product;
         } catch (error) {
             console.error('Get product error:', error);
@@ -237,46 +243,31 @@ const api = {
     },
 
     async createProduct(formData) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/products`, {
-                method: 'POST',
-                headers: this.getAuthHeaders(),
-                body: formData
-            });
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Create product error:', error);
-            throw error;
-        }
+        const response = await this.apiFetch(`${API_BASE_URL}/products`, {
+            method: 'POST',
+            body: formData
+        });
+        return this.handleResponse(response);
     },
 
     async updateProduct(id, formData) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/products/${id}`, {
-                method: 'PUT',
-                headers: this.getAuthHeaders(),
-                body: formData
-            });
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Update product error:', error);
-            throw error;
-        }
+        const response = await this.apiFetch(`${API_BASE_URL}/products/${id}`, {
+            method: 'PUT',
+            body: formData
+        });
+        return this.handleResponse(response);
     },
 
     async deleteProduct(id) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/products/${id}`, {
-                method: 'DELETE',
-                headers: this.getAuthHeaders()
-            });
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Delete product error:', error);
-            throw error;
-        }
+        const response = await this.apiFetch(`${API_BASE_URL}/products/${id}`, {
+            method: 'DELETE'
+        });
+        return this.handleResponse(response);
     },
 
+    // ============================================
+    // Messages
+    // ============================================
     async getMessages() {
         try {
             const response = await fetch(`${API_BASE_URL}/messages`, {
@@ -291,93 +282,54 @@ const api = {
     },
 
     async markMessageAsRead(id) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/messages/${id}/read`, {
-                method: 'PUT',
-                headers: this.getAuthHeaders()
-            });
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Mark message read error:', error);
-            throw error;
-        }
+        const response = await this.apiFetch(`${API_BASE_URL}/messages/${id}/read`, {
+            method: 'PUT'
+        });
+        return this.handleResponse(response);
     },
 
     async deleteMessage(id) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/messages/${id}`, {
-                method: 'DELETE',
-                headers: this.getAuthHeaders()
-            });
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Delete message error:', error);
-            throw error;
-        }
+        const response = await this.apiFetch(`${API_BASE_URL}/messages/${id}`, {
+            method: 'DELETE'
+        });
+        return this.handleResponse(response);
     },
 
+    // ============================================
+    // Orders
+    // ============================================
     async getOrders() {
         try {
-            console.log('Fetching orders...');
             const response = await fetch(`${API_BASE_URL}/orders`, {
-                headers: {
-                    ...this.getAuthHeaders(),
-                    'Accept': 'application/json'
-                }
+                headers: this.getAuthHeaders()
             });
-            
-            console.log('Orders response status:', response.status);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Error response:', errorText);
-                throw new Error(`HTTP ${response.status}: ${errorText}`);
-            }
-            
-            const data = await response.json();
-            console.log('Orders data:', data);
-            
-            if (data.success === false) {
-                throw new Error(data.message || 'Failed to load orders');
-            }
-            
+            const data = await this.handleResponse(response);
             return data.orders || [];
         } catch (error) {
             console.error('Get orders error:', error);
-            throw error;
+            return [];
         }
     },
 
     async updateOrderStatus(id, status) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/orders/${id}/status`, {
-                method: 'PUT',
-                headers: {
-                    ...this.getAuthHeaders(),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ status })
-            });
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Update order status error:', error);
-            throw error;
-        }
+        const response = await this.apiFetch(`${API_BASE_URL}/orders/${id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        return this.handleResponse(response);
     },
 
     async deleteOrder(id) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/orders/${id}`, {
-                method: 'DELETE',
-                headers: this.getAuthHeaders()
-            });
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Delete order error:', error);
-            throw error;
-        }
+        const response = await this.apiFetch(`${API_BASE_URL}/orders/${id}`, {
+            method: 'DELETE'
+        });
+        return this.handleResponse(response);
     },
 
+    // ============================================
+    // Dashboard
+    // ============================================
     async getDashboardStats() {
         try {
             const [projects, products, messages, orders] = await Promise.all([
@@ -386,14 +338,14 @@ const api = {
                 this.getMessages(),
                 this.getOrders()
             ]);
-
             return {
                 totalProjects: projects.length,
                 totalProducts: products.length,
                 totalMessages: messages.length,
                 unreadMessages: messages.filter(m => !m.is_read).length,
                 totalOrders: orders.length,
-                pendingOrders: orders.filter(o => o.status === 'pending').length
+                pendingOrders: orders.filter(o => o.status === 'pending').length,
+                recentOrders: orders.slice(0, 5)
             };
         } catch (error) {
             console.error('Dashboard stats error:', error);
@@ -401,13 +353,22 @@ const api = {
         }
     },
 
+    // ============================================
+    // Response handler
+    // ============================================
     async handleResponse(response) {
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response:', text.substring(0, 200));
+            throw new Error('Server returned non-JSON response');
+        }
         const data = await response.json();
-        
         if (!response.ok) {
             throw new Error(data.message || 'An error occurred');
         }
-        
         return data;
     }
 };
+
+window.api = api;
