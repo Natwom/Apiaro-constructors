@@ -156,6 +156,7 @@
         </div>
     </div>
 
+    <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script>
         let allProjects = [];
@@ -167,9 +168,7 @@
         
         async function loadProjects() {
             try {
-                const response = await apiFetch('http://localhost:5000/api/projects');
-                const data = await response.json();
-                allProjects = data.projects || [];
+                allProjects = await api.getProjects();
                 displayProjects(allProjects);
             } catch (error) {
                 console.error('Error loading projects:', error);
@@ -189,8 +188,8 @@
             tbody.innerHTML = projects.map(project => `
                 <tr>
                     <td>
-                        <img src="${project.images && project.images.length > 0 ? 'http://localhost:5000/' + project.images[0] : 'https://via.placeholder.com/50'}" 
-                             alt="${project.title}" class="table-img">
+                        <img src="${project.image_url || 'https://via.placeholder.com/50'}" 
+                             alt="${project.title}" class="table-img" onerror="this.src='https://via.placeholder.com/50'">
                     </td>
                     <td>${project.title}</td>
                     <td><span class="badge badge-info">${project.category}</span></td>
@@ -237,9 +236,7 @@
         
         async function editProject(id) {
             try {
-                const response = await apiFetch(`http://localhost:5000/api/projects/${id}`);
-                const data = await response.json();
-                const project = data.project;
+                const project = await api.getProject(id);
                 
                 document.getElementById('projectId').value = project.id;
                 document.getElementById('projectTitle').value = project.title;
@@ -287,19 +284,11 @@
                 formData.append('images', files[i]);
             }
             
-            const url = id ? `http://localhost:5000/api/projects/${id}` : 'http://localhost:5000/api/projects';
-            const method = id ? 'PUT' : 'POST';
-            
             try {
-                const response = await apiFetch(url, {
-                    method: method,
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.message || 'Failed to save project');
+                if (id) {
+                    await api.updateProject(id, formData);
+                } else {
+                    await api.createProject(formData);
                 }
                 
                 closeModal();
@@ -315,17 +304,9 @@
             if (!confirm('Are you sure you want to delete this project?')) return;
             
             try {
-                const response = await apiFetch(`http://localhost:5000/api/projects/${id}`, {
-                    method: 'DELETE'
-                });
-                
-                if (response.ok) {
-                    loadProjects();
-                    alert('Project deleted successfully!');
-                } else {
-                    const data = await response.json();
-                    alert('Failed to delete: ' + (data.message || 'Unknown error'));
-                }
+                await api.deleteProject(id);
+                loadProjects();
+                alert('Project deleted successfully!');
             } catch (error) {
                 alert('Error deleting project: ' + error.message);
             }

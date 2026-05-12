@@ -92,7 +92,6 @@
         </div>
     </div>
 
-    <!-- FIXED: Correct path to api.js -->
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script>
@@ -103,15 +102,6 @@
             checkAuth();
             loadOrders();
         });
-        
-        function checkAuth() {
-            const token = localStorage.getItem('admin_token');
-            if (!token) {
-                window.location.href = 'login.html';
-                return false;
-            }
-            return true;
-        }
         
         async function loadOrders() {
             const tbody = document.getElementById('ordersTable');
@@ -140,7 +130,6 @@
             }
             
             tbody.innerHTML = orders.map(order => {
-                // SAFE parsing of items
                 let items = [];
                 let itemCount = 0;
                 try {
@@ -222,7 +211,6 @@
                 return;
             }
             
-            // SAFE parsing of items
             let items = [];
             try {
                 if (order.items) {
@@ -317,7 +305,6 @@
             try {
                 await api.updateOrderStatus(currentOrderId, status);
                 
-                // Update local data
                 const order = allOrders.find(o => o.id === currentOrderId);
                 if (order) {
                     order.status = status;
@@ -338,12 +325,6 @@
         function closeModal() {
             document.getElementById('orderModal').style.display = 'none';
             currentOrderId = null;
-        }
-        
-        function logout() {
-            localStorage.removeItem('admin_token');
-            localStorage.removeItem('user');
-            window.location.href = 'login.html';
         }
     </script>
 </body>
