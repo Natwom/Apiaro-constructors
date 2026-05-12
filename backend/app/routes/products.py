@@ -1,17 +1,11 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import Product
 from app import db
-import os
 import json
-from werkzeug.utils import secure_filename
+from app.utils.cloudinary_upload import upload_multiple_images
 
 products_bp = Blueprint('products', __name__)
-
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # PUBLIC - No auth required for viewing
 @products_bp.route('/products', methods=['GET'])
@@ -21,12 +15,10 @@ def get_products():
         
         query = Product.query.filter_by(is_active=True)
         
-        # Filter by category if provided
         category = request.args.get('category')
         if category:
             query = query.filter_by(category=category)
         
-        # Filter by featured
         featured = request.args.get('featured')
         if featured:
             query = query.filter_by(featured=featured.lower() == 'true')
@@ -43,7 +35,7 @@ def get_products():
         traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# PUBLIC - No auth required for viewing single product
+# PUBLIC
 @products_bp.route('/products/<int:id>', methods=['GET'])
 def get_product(id):
     try:
@@ -58,7 +50,7 @@ def get_product(id):
         print(f'❌ Error in get_product: {str(e)}')
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# PROTECTED - Auth required for creating
+# PROTECTED - Create
 @products_bp.route('/products', methods=['POST'])
 @jwt_required()
 def create_product():
@@ -66,7 +58,6 @@ def create_product():
         current_user = get_jwt_identity()
         print(f'✅ POST /products - User: {current_user}')
         
-        # Handle form data
         name = request.form.get('name')
         category = request.form.get('category')
         description = request.form.get('description')
@@ -77,19 +68,10 @@ def create_product():
         
         print(f'📋 Form data: name={name}, category={category}')
         
-        # Handle images
+        # Upload images to Cloudinary
         images = request.files.getlist('images')
-        image_paths = []
+        image_urls = upload_multiple_images(images, folder='apiaro/products')
         
-        for image in images:
-            if image and allowed_file(image.filename):
-                filename = secure_filename(image.filename)
-                upload_path = os.path.join(current_app.root_path, '..', 'uploads', 'products', filename)
-                image.save(upload_path)
-                image_paths.append(f'uploads/products/{filename}')
-                print(f'📸 Saved image: {filename}')
-        
-        # Create product with JSON string for images
         product = Product(
             name=name,
             category=category,
@@ -98,7 +80,7 @@ def create_product():
             stock=int(stock) if stock else 0,
             unit=unit,
             featured=featured,
-            images=json.dumps(image_paths) if image_paths else '[]'
+            images=json.dumps(image_urls) if image_urls else '[]'
         )
         
         db.session.add(product)
@@ -119,7 +101,7 @@ def create_product():
         traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# PROTECTED - Auth required for updating
+# PROTECTED - Update
 @products_bp.route('/products/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_product(id):
@@ -129,7 +111,6 @@ def update_product(id):
         
         product = Product.query.get_or_404(id)
         
-        # Update fields
         product.name = request.form.get('name', product.name)
         product.category = request.form.get('category', product.category)
         product.description = request.form.get('description', product.description)
@@ -139,7 +120,7 @@ def update_product(id):
         product.featured = request.form.get('featured', str(product.featured)).lower() == 'true'
         product.is_active = request.form.get('is_active', str(product.is_active)).lower() == 'true'
         
-        # Handle new images
+        # Upload new images to Cloudinary
         images = request.files.getlist('images')
         current_images = []
         if product.images:
@@ -148,12 +129,8 @@ def update_product(id):
             except:
                 current_images = []
         
-        for image in images:
-            if image and allowed_file(image.filename):
-                filename = secure_filename(image.filename)
-                upload_path = os.path.join(current_app.root_path, '..', 'uploads', 'products', filename)
-                image.save(upload_path)
-                current_images.append(f'uploads/products/{filename}')
+        new_urls = upload_multiple_images(images, folder='apiaro/products')
+        current_images.extend(new_urls)
         
         product.images = json.dumps(current_images) if current_images else '[]'
         
@@ -170,7 +147,7 @@ def update_product(id):
         print(f'❌ Error updating product: {str(e)}')
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# PROTECTED - Auth required for deleting
+# PROTECTED - Delete
 @products_bp.route('/products/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_product(id):
@@ -179,7 +156,7 @@ def delete_product(id):
         print(f'✅ DELETE /products/{id} - User: {current_user}')
         
         product = Product.query.get_or_404(id)
-        product.is_active = False  # Soft delete
+        product.is_active = False
         db.session.commit()
         
         return jsonify({
@@ -190,3 +167,4 @@ def delete_product(id):
     except Exception as e:
         db.session.rollback()
         print(f'❌ Error deleting product: {str(e)}')
+        return jsonify({'success': False, 'message': str(e)}), 500

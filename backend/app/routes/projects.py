@@ -1,25 +1,18 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import Project
 from app import db
-import os
 import json
-from werkzeug.utils import secure_filename
+from app.utils.cloudinary_upload import upload_multiple_images
 
 projects_bp = Blueprint('projects', __name__)
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# PUBLIC - No auth required for viewing
+# PUBLIC
 @projects_bp.route('/projects', methods=['GET'])
 def get_projects():
     try:
         print('✅ GET /projects - Public access')
         
-        # Optional filtering
         category = request.args.get('category')
         status = request.args.get('status')
         featured = request.args.get('featured')
@@ -43,7 +36,7 @@ def get_projects():
         print(f'❌ Error in get_projects: {str(e)}')
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# PUBLIC - No auth required for viewing single project
+# PUBLIC
 @projects_bp.route('/projects/<int:id>', methods=['GET'])
 def get_project(id):
     try:
@@ -58,7 +51,7 @@ def get_project(id):
         print(f'❌ Error in get_project: {str(e)}')
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# PROTECTED - Auth required for creating
+# PROTECTED - Create
 @projects_bp.route('/projects', methods=['POST'])
 @jwt_required()
 def create_project():
@@ -66,7 +59,6 @@ def create_project():
         current_user = get_jwt_identity()
         print(f'✅ POST /projects - User: {current_user}')
         
-        # Handle form data
         title = request.form.get('title')
         category = request.form.get('category')
         status = request.form.get('status')
@@ -80,19 +72,10 @@ def create_project():
         
         print(f'📋 Form data: title={title}, category={category}')
         
-        # Handle images
+        # Upload images to Cloudinary
         images = request.files.getlist('images')
-        image_paths = []
+        image_urls = upload_multiple_images(images, folder='apiaro/projects')
         
-        for image in images:
-            if image and allowed_file(image.filename):
-                filename = secure_filename(image.filename)
-                upload_path = os.path.join(current_app.root_path, '..', 'uploads', 'projects', filename)
-                image.save(upload_path)
-                image_paths.append(f'uploads/projects/{filename}')
-                print(f'📸 Saved image: {filename}')
-        
-        # Create project with JSON string for images
         project = Project(
             title=title,
             category=category,
@@ -104,7 +87,7 @@ def create_project():
             featured=featured,
             start_date=start_date,
             end_date=end_date,
-            images=json.dumps(image_paths) if image_paths else '[]'
+            images=json.dumps(image_urls) if image_urls else '[]'
         )
         
         db.session.add(project)
@@ -125,7 +108,7 @@ def create_project():
         traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# PROTECTED - Auth required for updating
+# PROTECTED - Update
 @projects_bp.route('/projects/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_project(id):
@@ -135,7 +118,6 @@ def update_project(id):
         
         project = Project.query.get_or_404(id)
         
-        # Update fields
         project.title = request.form.get('title', project.title)
         project.category = request.form.get('category', project.category)
         project.status = request.form.get('status', project.status)
@@ -147,7 +129,7 @@ def update_project(id):
         project.start_date = request.form.get('start_date', project.start_date)
         project.end_date = request.form.get('end_date', project.end_date)
         
-        # Handle new images
+        # Upload new images to Cloudinary
         images = request.files.getlist('images')
         current_images = []
         if project.images:
@@ -156,12 +138,8 @@ def update_project(id):
             except:
                 current_images = []
         
-        for image in images:
-            if image and allowed_file(image.filename):
-                filename = secure_filename(image.filename)
-                upload_path = os.path.join(current_app.root_path, '..', 'uploads', 'projects', filename)
-                image.save(upload_path)
-                current_images.append(f'uploads/projects/{filename}')
+        new_urls = upload_multiple_images(images, folder='apiaro/projects')
+        current_images.extend(new_urls)
         
         project.images = json.dumps(current_images) if current_images else '[]'
         
@@ -178,7 +156,7 @@ def update_project(id):
         print(f'❌ Error updating project: {str(e)}')
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# PROTECTED - Auth required for deleting
+# PROTECTED - Delete
 @projects_bp.route('/projects/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_project(id):

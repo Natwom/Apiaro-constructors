@@ -8,6 +8,20 @@ import os
 db = SQLAlchemy()
 jwt = JWTManager()
 
+# ============================================
+# CLOUDINARY
+# ============================================
+import cloudinary
+
+def init_cloudinary(app):
+    cloudinary.config(
+        cloud_name=app.config['CLOUDINARY_CLOUD_NAME'],
+        api_key=app.config['CLOUDINARY_API_KEY'],
+        api_secret=app.config['CLOUDINARY_API_SECRET'],
+        secure=True
+    )
+    print('☁️ Cloudinary configured')
+
 def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
@@ -15,8 +29,9 @@ def create_app(config_name='default'):
     # Initialize extensions
     db.init_app(app)
     jwt.init_app(app)
+    init_cloudinary(app)
     
-    # CRITICAL: Enable CORS for ALL routes including uploads
+    # CRITICAL: Enable CORS for ALL routes
     CORS(app, resources={
         r"/*": {
             "origins": "*",
@@ -28,7 +43,7 @@ def create_app(config_name='default'):
         }
     })
     
-    # Global after_request handler to ensure CORS headers on ALL responses
+    # Global after_request handler
     @app.after_request
     def after_request(response):
         response.headers['Access-Control-Allow-Origin'] = '*'
@@ -62,9 +77,7 @@ def create_app(config_name='default'):
     def expired_token_callback(jwt_header, jwt_payload):
         return {'success': False, 'message': 'Token expired'}, 401
     
-    # ============================================
-    # CRITICAL FIX: Add root API endpoint
-    # ============================================
+    # Root API endpoint
     @app.route('/api', methods=['GET'])
     def api_root():
         return jsonify({
@@ -89,9 +102,7 @@ def create_app(config_name='default'):
             'service': 'apiaro-backend'
         }), 200
     
-    # ============================================
     # REGISTER BLUEPRINTS
-    # ============================================
     from app.routes.auth import auth_bp
     from app.routes.projects import projects_bp
     from app.routes.products import products_bp
@@ -104,7 +115,7 @@ def create_app(config_name='default'):
     app.register_blueprint(messages_bp, url_prefix='/api')
     app.register_blueprint(orders_bp, url_prefix='/api')
     
-    # Create upload directories
+    # Create upload directories (kept for backward compatibility)
     upload_folder = os.path.join(app.root_path, '..', 'uploads')
     projects_folder = os.path.join(upload_folder, 'projects')
     products_folder = os.path.join(upload_folder, 'products')
@@ -114,32 +125,25 @@ def create_app(config_name='default'):
     
     print(f'📁 Upload folder: {upload_folder}')
     
-    # ============================================
-    # SINGLE UPLOAD ROUTE HANDLER
-    # ============================================
+    # Legacy upload route handler (for old local images)
     @app.route('/uploads/<path:filename>')
     def serve_upload(filename):
         try:
-            # Security: Prevent directory traversal
             safe_path = os.path.normpath(filename)
             if safe_path.startswith('..') or safe_path.startswith('/'):
-                print(f'❌ Invalid path attempt: {filename}')
                 return jsonify({'error': 'Invalid path'}), 400
             
             file_path = os.path.join(upload_folder, safe_path)
             
             if not os.path.exists(file_path):
-                print(f'❌ File not found: {file_path}')
                 return jsonify({'error': 'File not found', 'path': safe_path}), 404
                 
             response = send_from_directory(upload_folder, safe_path)
             response.headers['Access-Control-Allow-Origin'] = '*'
             response.headers['Cache-Control'] = 'public, max-age=31536000'
-            print(f'📸 Serving: {filename}')
             return response
             
         except Exception as e:
-            print(f'❌ Error serving file: {e}')
             return jsonify({'error': str(e)}), 500
     
     # Error handlers
