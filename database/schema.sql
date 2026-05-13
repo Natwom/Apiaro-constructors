@@ -1,4 +1,4 @@
--- Apiaro Constructors Database Schema
+-- Apiaro Contractors Database Schema
 
 CREATE DATABASE IF NOT EXISTS apiaro_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE apiaro_db;
