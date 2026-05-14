@@ -6,8 +6,50 @@
     <title>Admin Login | Apiaro Contractors</title>
     <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Spinner overlay styles */
+        .auth-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .auth-overlay.active {
+            display: flex;
+        }
+        .auth-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e94560;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .auth-overlay p {
+            color: #fff;
+            font-size: 16px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+    </style>
 </head>
 <body class="login-page">
+    <!-- Authentication Checking Overlay -->
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-spinner"></div>
+        <p>Checking authentication...</p>
+    </div>
+
     <div class="login-container">
         <div class="login-box">
             <div class="login-header">
@@ -72,22 +114,40 @@
             const btnText = document.querySelector('.btn-text');
             const btnLoader = document.querySelector('.btn-loader');
             const loginBtn = document.getElementById('loginBtn');
+            const authOverlay = document.getElementById('authOverlay');
             
+            // Hide error
             errorDiv.style.display = 'none';
+            
+            // Show button loading
             btnText.style.display = 'none';
             btnLoader.style.display = 'inline';
             loginBtn.disabled = true;
+            
+            // Show full-screen "Checking authentication..." spinner
+            authOverlay.classList.add('active');
             
             try {
                 console.log('Attempting login...');
                 await login(username, password);
                 console.log('Login successful, redirecting...');
-                window.location.href = 'dashboard.html';
+                
+                // Small delay so user sees the success state
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 500);
+                
             } catch (error) {
                 console.error('Login failed:', error);
+                
+                // Hide spinner overlay
+                authOverlay.classList.remove('active');
+                
+                // Show error
                 errorDiv.textContent = error.message || 'Login failed. Please check your credentials.';
                 errorDiv.style.display = 'block';
-            } finally {
+                
+                // Reset button
                 btnText.style.display = 'inline';
                 btnLoader.style.display = 'none';
                 loginBtn.disabled = false;
@@ -109,8 +169,8 @@
             }
         }
         
-        // REMOVED: No auto-redirect. User must always click login.
-        // index.html handles the redirect decision.
+        // REMOVED: No auto-redirect. Always show login form first.
+        // User must manually enter credentials and click Login.
     </script>
 </body>
 </html>

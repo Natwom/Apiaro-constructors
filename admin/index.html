@@ -4,47 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apiaro Admin</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: #1a1a2e;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .loader {
-            text-align: center;
-        }
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid #e94560;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 15px;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .loader p {
-            color: #a0a0a0;
-            font-size: 14px;
-        }
-    </style>
 </head>
 <body>
-    <div class="loader" id="loader">
-        <div class="spinner"></div>
-        <p>Checking authentication...</p>
-    </div>
-
     <script>
-        // STRICT: Always redirect to login first
-        // Backend will validate token on dashboard load
         (function() {
             window.location.replace('login.html');
         })();
