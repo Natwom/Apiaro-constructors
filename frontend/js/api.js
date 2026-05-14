@@ -315,6 +315,25 @@ const api = {
         }
     },
 
+    async trackOrder({order_id, email, phone}) {
+        try {
+            const params = new URLSearchParams();
+            if (order_id) params.append('order_id', order_id);
+            if (email) params.append('email', email);
+            if (phone) params.append('phone', phone);
+            
+            const response = await fetch(`${API_BASE_URL}/orders/track?${params.toString()}`, {
+                headers: { 
+                    'Accept': 'application/json'
+                }
+            });
+            return this.handleResponse(response);
+        } catch (error) {
+            console.error('Track order error:', error);
+            throw error;
+        }
+    },
+
     async updateOrderStatus(id, status, token) {
         try {
             const response = await fetch(`${API_BASE_URL}/orders/${id}/status`, {
