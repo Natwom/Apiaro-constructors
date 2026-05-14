@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Track My Order | Apiaro Constructors</title>
+    <title>My Orders | Apiaro Constructors</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/responsive.css">
@@ -26,6 +26,7 @@
                 <li><a href="projects.html">Projects</a></li>
                 <li><a href="products.html">Products</a></li>
                 <li><a href="contact.html">Contact</a></li>
+                <li><a href="orders.html" class="active" title="My Orders"><i class="fas fa-box"></i></a></li>
                 <li><a href="cart.html" class="btn-cart"><i class="fas fa-shopping-cart"></i> <span id="cartCount">0</span></a></li>
             </ul>
         </div>
@@ -33,11 +34,11 @@
 
     <section class="page-header">
         <div class="container">
-            <h1>Track My Order</h1>
+            <h1>My Orders</h1>
             <nav class="breadcrumb">
                 <a href="index.html">Home</a>
                 <span>/</span>
-                <span>Order Tracking</span>
+                <span>Order History</span>
             </nav>
         </div>
     </section>
@@ -45,26 +46,26 @@
     <section class="section orders-section">
         <div class="container">
             <div class="track-card">
-                <h2><i class="fas fa-search"></i> Find Your Order</h2>
-                <p>Enter your Order ID, Email, or Phone number used during checkout.</p>
+                <h2><i class="fas fa-search"></i> Find Your Orders</h2>
+                <p>Enter your phone number to see all your orders. Or use Order ID for a specific order.</p>
                 
                 <form id="trackForm" class="track-form" onsubmit="trackOrder(event)">
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Order ID</label>
+                            <label>Phone Number *</label>
+                            <input type="tel" id="trackPhone" placeholder="0712345678" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Order ID (Optional)</label>
                             <input type="number" id="trackOrderId" placeholder="e.g. 42">
                         </div>
                         <div class="form-group">
-                            <label>Email</label>
+                            <label>Email (Optional)</label>
                             <input type="email" id="trackEmail" placeholder="you@example.com">
-                        </div>
-                        <div class="form-group">
-                            <label>Phone</label>
-                            <input type="tel" id="trackPhone" placeholder="0712345678">
                         </div>
                     </div>
                     <button type="submit" id="trackBtn" class="btn btn-primary">
-                        <i class="fas fa-search"></i> Track Order
+                        <i class="fas fa-search"></i> Find My Orders
                     </button>
                 </form>
             </div>
@@ -105,20 +106,29 @@
     <script src="js/cart.js"></script>
     <script src="js/main.js"></script>
     <script>
+        const CUSTOMER_PHONE_KEY = 'apiaro_customer_phone';
+
         document.addEventListener('DOMContentLoaded', () => {
             updateCartUI();
             
-            // Auto-search if URL has params (redirected from checkout)
+            // Auto-fill saved phone number
+            const savedPhone = localStorage.getItem(CUSTOMER_PHONE_KEY);
+            if (savedPhone) {
+                document.getElementById('trackPhone').value = savedPhone;
+                // Auto-search if we have a saved phone
+                performTrack();
+            }
+            
+            // Also check URL params (from checkout redirect)
             const params = new URLSearchParams(window.location.search);
             const orderId = params.get('order_id');
             const email = params.get('email');
             const phone = params.get('phone');
             
             if (orderId || email || phone) {
-                document.getElementById('trackOrderId').value = orderId || '';
-                document.getElementById('trackEmail').value = email || '';
-                document.getElementById('trackPhone').value = phone || '';
-                // Don't pass fake event - call directly
+                if (phone) document.getElementById('trackPhone').value = phone;
+                if (email) document.getElementById('trackEmail').value = email;
+                if (orderId) document.getElementById('trackOrderId').value = orderId;
                 performTrack();
             }
         });
@@ -133,9 +143,14 @@
             const email = document.getElementById('trackEmail').value.trim();
             const phone = document.getElementById('trackPhone').value.trim();
             
-            if (!orderId && !email && !phone) {
-                showNotification('Please enter Order ID, Email, or Phone');
+            if (!phone && !orderId) {
+                showNotification('Please enter your phone number or Order ID');
                 return;
+            }
+            
+            // Save phone for future visits
+            if (phone) {
+                localStorage.setItem(CUSTOMER_PHONE_KEY, phone);
             }
             
             const btn = document.getElementById('trackBtn');
@@ -155,18 +170,26 @@
                 
                 if (response.success) {
                     if (response.orders && response.orders.length > 0) {
-                        resultsDiv.innerHTML = response.orders.map(order => renderOrderCard(order)).join('');
+                        resultsDiv.innerHTML = `<h3 style="margin-bottom:1rem;color:var(--primary-color);">Found ${response.orders.length} order(s)</h3>` + 
+                            response.orders.map(order => renderOrderCard(order)).join('');
                     } else if (response.order) {
                         resultsDiv.innerHTML = renderOrderCard(response.order);
                     } else {
-                        resultsDiv.innerHTML = '<p class="text-center error">No orders found.</p>';
+                        resultsDiv.innerHTML = `
+                            <div class="empty-cart-page">
+                                <i class="fas fa-box-open" style="font-size: 4rem; color: #ddd; margin-bottom: 1rem;"></i>
+                                <h3>No orders found</h3>
+                                <p>We couldn't find any orders with those details.</p>
+                                <a href="products.html" class="btn btn-primary" style="margin-top: 1rem;">Start Shopping</a>
+                            </div>
+                        `;
                     }
                 } else {
                     resultsDiv.innerHTML = `<p class="text-center error">${response.message || 'Order not found'}</p>`;
                 }
             } catch (error) {
                 console.error(error);
-                resultsDiv.innerHTML = '<p class="text-center error">Error fetching order. Please try again.</p>';
+                resultsDiv.innerHTML = '<p class="text-center error">Error fetching orders. Please try again.</p>';
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalText;

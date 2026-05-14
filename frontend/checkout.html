@@ -26,6 +26,7 @@
                 <li><a href="projects.html">Projects</a></li>
                 <li><a href="products.html">Products</a></li>
                 <li><a href="contact.html">Contact</a></li>
+                <li><a href="orders.html" title="My Orders"><i class="fas fa-box"></i></a></li>
                 <li><a href="cart.html" class="btn-cart"><i class="fas fa-shopping-cart"></i> <span id="cartCount">0</span></a></li>
             </ul>
         </div>
@@ -131,9 +132,17 @@
     <script src="js/cart.js"></script>
     <script src="js/main.js"></script>
     <script>
+        const CUSTOMER_PHONE_KEY = 'apiaro_customer_phone';
+
         document.addEventListener('DOMContentLoaded', () => {
             updateCartUI();
             renderCheckoutSummary();
+            
+            // Pre-fill phone if we have it from before
+            const savedPhone = localStorage.getItem(CUSTOMER_PHONE_KEY);
+            if (savedPhone) {
+                document.getElementById('customerPhone').value = savedPhone;
+            }
             
             const cart = getCart();
             if (cart.length === 0) {
@@ -194,6 +203,9 @@
                 formattedPhone = '254' + phone;
             }
             
+            // Save phone for future tracking
+            localStorage.setItem(CUSTOMER_PHONE_KEY, phone);
+            
             const items = cart.map(item => ({
                 product_id: item.id,
                 quantity: item.quantity
@@ -227,7 +239,7 @@
                         <p class="hint">Enter your M-Pesa PIN to complete payment</p>
                     `;
                     
-                    pollPaymentStatus(response.order.id, formattedPhone);
+                    pollPaymentStatus(response.order.id, phone);
                 } else {
                     throw new Error(response.message || 'Order failed');
                 }
@@ -256,7 +268,7 @@
                         <i class="fas fa-clock"></i>
                         <p>Payment is taking longer than expected.</p>
                         <p class="hint">Check your M-Pesa messages. If you completed payment, we'll update your order shortly.</p>
-                        <a href="orders.html?order_id=${orderId}&phone=${encodeURIComponent(customerPhone)}" class="btn btn-secondary" style="margin-top:1rem;">View Order Status</a>
+                        <a href="orders.html" class="btn btn-secondary" style="margin-top:1rem;">View My Orders</a>
                     `;
                 }
                 return;
@@ -273,7 +285,7 @@
                             <i class="fas fa-check-circle"></i>
                             <h3>Payment Successful!</h3>
                             <p>Receipt: ${response.mpesa_receipt_number || 'N/A'}</p>
-                            <a href="orders.html?order_id=${orderId}&phone=${encodeURIComponent(customerPhone)}" class="btn btn-primary" style="margin-top:1rem;">View My Order</a>
+                            <a href="orders.html" class="btn btn-primary" style="margin-top:1rem;">View My Orders</a>
                         `;
                     }
                     if (placeOrderBtn) placeOrderBtn.style.display = 'none';
