@@ -30,6 +30,24 @@ def normalize_phone(phone):
         phone = '254' + phone
     return phone
 
+def get_product_image_url(product):
+    """Extract the first image URL from a product"""
+    try:
+        images = json.loads(product.images) if product.images else []
+    except:
+        images = []
+    
+    if images and len(images) > 0:
+        image = images[0]
+        # Return full URL if relative path
+        if image.startswith('http'):
+            return image
+        elif image.startswith('/'):
+            return image
+        else:
+            return f'/uploads/products/{image}'
+    return ''
+
 def get_mpesa_access_token():
     """Get M-Pesa OAuth access token"""
     config = current_app.config
@@ -182,7 +200,6 @@ def track_order():
                 'message': 'Please provide Order ID, Email, or Phone number'
             }, 400)
         
-        # If order_id provided, look it up directly
         if order_id:
             order = Order.query.get(order_id)
             if not order:
@@ -191,7 +208,6 @@ def track_order():
                     'message': 'Order not found'
                 }, 404)
             
-            # Verify email only if it was provided in the request
             if email:
                 if not order.customer_email or order.customer_email.lower() != email:
                     return cors_response({
@@ -199,8 +215,6 @@ def track_order():
                         'message': 'Details do not match our records'
                     }, 403)
             
-            # Verify phone only if it was provided in the request
-            # Use normalized comparison
             if phone:
                 normalized_input = normalize_phone(phone)
                 normalized_stored = normalize_phone(order.customer_phone)
@@ -215,18 +229,16 @@ def track_order():
                 'order': order.to_dict()
             }, 200)
         
-        # Search by email and/or phone (no order_id)
         query = Order.query
         if email:
             query = query.filter(db.func.lower(Order.customer_email) == email)
         if phone:
             normalized_phone = normalize_phone(phone)
-            # Use LIKE query with the normalized phone to match any format stored
             query = query.filter(
                 db.or_(
                     Order.customer_phone == normalized_phone,
                     Order.customer_phone == phone,
-                    Order.customer_phone.like(f'%{normalized_phone[3:]}')  # match last 9 digits
+                    Order.customer_phone.like(f'%{normalized_phone[3:]}')
                 )
             )
         
@@ -263,7 +275,6 @@ def create_order():
         items = data.get('items')
         phone_number = data.get('customer_phone')
         
-        # Normalize phone before storing
         normalized_phone = normalize_phone(phone_number)
         
         total_amount = 0
@@ -289,12 +300,16 @@ def create_order():
                     'message': f'Insufficient stock for {product.name}. Available: {product.stock}'
                 }, 400)
             
+            # Get product image URL
+            product_image = get_product_image_url(product)
+            
             validated_items.append({
                 'product_id': product.id,
                 'product_name': product.name,
                 'quantity': quantity,
                 'unit_price': str(product.price),
-                'price': float(product.price) * quantity
+                'price': float(product.price) * quantity,
+                'product_image': product_image  # <-- IMAGE SAVED WITH ORDER
             })
             total_amount += float(product.price) * quantity
         
@@ -307,7 +322,7 @@ def create_order():
         order = Order(
             customer_name=data.get('customer_name').strip(),
             customer_email=data.get('customer_email', '').strip(),
-            customer_phone=normalized_phone,  # Store normalized phone
+            customer_phone=normalized_phone,
             customer_address=data.get('customer_address', '').strip(),
             items=json.dumps(validated_items),
             total_amount=total_amount,

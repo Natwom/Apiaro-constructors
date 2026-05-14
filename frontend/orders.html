@@ -168,6 +168,15 @@
             }
         }
 
+        function getOrderItemImage(item) {
+            // Try product_image first (stored with order)
+            if (item.product_image) {
+                return api.getImageUrl(item.product_image);
+            }
+            // Fallback to placeholder
+            return 'https://via.placeholder.com/80?text=No+Image';
+        }
+
         function renderOrderCard(order) {
             const items = order.items || [];
             const date = order.created_at ? new Date(order.created_at).toLocaleString() : 'N/A';
@@ -223,9 +232,14 @@
                         <div class="order-items-list">
                             ${items.map(item => `
                                 <div class="order-item-row">
-                                    <span>${item.product_name || 'Product'}</span>
-                                    <span>× ${item.quantity}</span>
-                                    <span>Ksh ${(parseFloat(item.unit_price || item.price || 0) * item.quantity).toLocaleString()}</span>
+                                    <div class="order-item-img">
+                                        <img src="${getOrderItemImage(item)}" alt="${item.product_name || 'Product'}" onerror="this.src='https://via.placeholder.com/80?text=No+Image'">
+                                    </div>
+                                    <div class="order-item-info">
+                                        <span class="order-item-name">${item.product_name || 'Product'}</span>
+                                        <span class="order-item-qty">× ${item.quantity}</span>
+                                    </div>
+                                    <span class="order-item-price">Ksh ${(parseFloat(item.unit_price || item.price || 0) * item.quantity).toLocaleString()}</span>
                                 </div>
                             `).join('')}
                         </div>
