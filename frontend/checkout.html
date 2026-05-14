@@ -227,7 +227,7 @@
                         <p class="hint">Enter your M-Pesa PIN to complete payment</p>
                     `;
                     
-                    pollPaymentStatus(response.order.id);
+                    pollPaymentStatus(response.order.id, formattedPhone);
                 } else {
                     throw new Error(response.message || 'Order failed');
                 }
@@ -244,7 +244,7 @@
             }
         }
 
-        async function pollPaymentStatus(orderId, attempts = 0) {
+        async function pollPaymentStatus(orderId, customerPhone, attempts = 0) {
             const maxAttempts = 30;
             const paymentStatus = document.getElementById('paymentStatus');
             const placeOrderBtn = document.getElementById('placeOrderBtn');
@@ -256,7 +256,7 @@
                         <i class="fas fa-clock"></i>
                         <p>Payment is taking longer than expected.</p>
                         <p class="hint">Check your M-Pesa messages. If you completed payment, we'll update your order shortly.</p>
-                        <a href="orders.html?order_id=${orderId}" class="btn btn-secondary" style="margin-top:1rem;">View Order Status</a>
+                        <a href="orders.html?order_id=${orderId}&phone=${encodeURIComponent(customerPhone)}" class="btn btn-secondary" style="margin-top:1rem;">View Order Status</a>
                     `;
                 }
                 return;
@@ -273,7 +273,7 @@
                             <i class="fas fa-check-circle"></i>
                             <h3>Payment Successful!</h3>
                             <p>Receipt: ${response.mpesa_receipt_number || 'N/A'}</p>
-                            <a href="orders.html?order_id=${orderId}" class="btn btn-primary" style="margin-top:1rem;">View My Order</a>
+                            <a href="orders.html?order_id=${orderId}&phone=${encodeURIComponent(customerPhone)}" class="btn btn-primary" style="margin-top:1rem;">View My Order</a>
                         `;
                     }
                     if (placeOrderBtn) placeOrderBtn.style.display = 'none';
@@ -292,11 +292,11 @@
                         placeOrderBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
                     }
                 } else {
-                    setTimeout(() => pollPaymentStatus(orderId, attempts + 1), 5000);
+                    setTimeout(() => pollPaymentStatus(orderId, customerPhone, attempts + 1), 5000);
                 }
             } catch (error) {
                 console.error('Error checking payment status:', error);
-                setTimeout(() => pollPaymentStatus(orderId, attempts + 1), 5000);
+                setTimeout(() => pollPaymentStatus(orderId, customerPhone, attempts + 1), 5000);
             }
         }
     </script>

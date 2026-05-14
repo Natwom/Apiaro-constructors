@@ -63,7 +63,7 @@
                             <input type="tel" id="trackPhone" placeholder="0712345678">
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" id="trackBtn" class="btn btn-primary">
                         <i class="fas fa-search"></i> Track Order
                     </button>
                 </form>
@@ -108,20 +108,27 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateCartUI();
             
+            // Auto-search if URL has params (redirected from checkout)
             const params = new URLSearchParams(window.location.search);
             const orderId = params.get('order_id');
             const email = params.get('email');
+            const phone = params.get('phone');
             
-            if (orderId || email) {
+            if (orderId || email || phone) {
                 document.getElementById('trackOrderId').value = orderId || '';
                 document.getElementById('trackEmail').value = email || '';
-                trackOrder(new Event('submit'));
+                document.getElementById('trackPhone').value = phone || '';
+                // Don't pass fake event - call directly
+                performTrack();
             }
         });
 
         async function trackOrder(e) {
             e.preventDefault();
-            
+            await performTrack();
+        }
+
+        async function performTrack() {
             const orderId = document.getElementById('trackOrderId').value.trim();
             const email = document.getElementById('trackEmail').value.trim();
             const phone = document.getElementById('trackPhone').value.trim();
@@ -131,7 +138,7 @@
                 return;
             }
             
-            const btn = e.target.querySelector('button[type="submit"]');
+            const btn = document.getElementById('trackBtn');
             const originalText = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
@@ -248,7 +255,7 @@
                 const response = await api.checkPaymentStatus(orderId);
                 showNotification(`Payment status: ${response.payment_status}`);
                 document.getElementById('trackOrderId').value = orderId;
-                trackOrder(new Event('submit'));
+                await performTrack();
             } catch (error) {
                 showNotification('Error checking status');
                 btn.disabled = false;

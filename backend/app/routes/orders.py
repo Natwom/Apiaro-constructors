@@ -177,6 +177,8 @@ def track_order():
                 'message': 'Please provide Order ID, Email, or Phone number'
             }, 400)
         
+        # If order_id provided, look it up directly
+        # Only verify email/phone if they were ALSO provided in the request
         if order_id:
             order = Order.query.get(order_id)
             if not order:
@@ -185,12 +187,15 @@ def track_order():
                     'message': 'Order not found'
                 }, 404)
             
-            if email and order.customer_email and order.customer_email.lower() != email:
-                return cors_response({
-                    'success': False,
-                    'message': 'Details do not match our records'
-                }, 403)
+            # Verify email only if it was provided in the request
+            if email:
+                if not order.customer_email or order.customer_email.lower() != email:
+                    return cors_response({
+                        'success': False,
+                        'message': 'Details do not match our records'
+                    }, 403)
             
+            # Verify phone only if it was provided in the request
             if phone:
                 clean_phone = phone.replace('+', '').replace(' ', '')
                 order_phone = (order.customer_phone or '').replace('+', '').replace(' ', '')
@@ -205,6 +210,7 @@ def track_order():
                 'order': order.to_dict()
             }, 200)
         
+        # Search by email and/or phone (no order_id)
         query = Order.query
         if email:
             query = query.filter(db.func.lower(Order.customer_email) == email)
