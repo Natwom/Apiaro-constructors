@@ -41,7 +41,6 @@ def get_product_image_url(product):
     
     if images and len(images) > 0:
         image = images[0]
-        # Return full URL if relative path
         if image.startswith('http'):
             return image
         elif image.startswith('/'):
@@ -302,7 +301,6 @@ def create_order():
                     'message': f'Insufficient stock for {product.name}. Available: {product.stock}'
                 }, 400)
             
-            # Get product image URL
             product_image = get_product_image_url(product)
             
             validated_items.append({
@@ -311,7 +309,7 @@ def create_order():
                 'quantity': quantity,
                 'unit_price': str(product.price),
                 'price': float(product.price) * quantity,
-                'product_image': product_image  # <-- IMAGE SAVED WITH ORDER
+                'product_image': product_image
             })
             total_amount += float(product.price) * quantity
         
@@ -570,12 +568,13 @@ def get_daily_revenue():
             'orders': 0
         }
     
+    # FIXED: Count ALL non-cancelled orders instead of only payment_status='completed'
     results = db.session.query(
         db.func.strftime('%Y-%m-%d', Order.created_at).label('day'),
         db.func.sum(Order.total_amount).label('revenue'),
         db.func.count(Order.id).label('orders')
     ).filter(
-        Order.payment_status == 'completed',
+        Order.status != 'cancelled',
         Order.created_at >= datetime.combine(start, datetime.min.time())
     ).group_by('day').order_by('day').all()
     
@@ -607,12 +606,13 @@ def get_monthly_revenue():
         else:
             current = current.replace(month=current.month + 1)
     
+    # FIXED: Count ALL non-cancelled orders
     results = db.session.query(
         db.func.strftime('%Y-%m', Order.created_at).label('month'),
         db.func.sum(Order.total_amount).label('revenue'),
         db.func.count(Order.id).label('orders')
     ).filter(
-        Order.payment_status == 'completed',
+        Order.status != 'cancelled',
         Order.created_at >= start
     ).group_by('month').order_by('month').all()
     
@@ -626,12 +626,13 @@ def get_monthly_revenue():
 
 def get_yearly_revenue():
     """Return revenue grouped by year (all time)"""
+    # FIXED: Count ALL non-cancelled orders
     results = db.session.query(
         db.func.strftime('%Y', Order.created_at).label('year'),
         db.func.sum(Order.total_amount).label('revenue'),
         db.func.count(Order.id).label('orders')
     ).filter(
-        Order.payment_status == 'completed'
+        Order.status != 'cancelled'
     ).group_by('year').order_by('year').all()
     
     return [
