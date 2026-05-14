@@ -53,15 +53,9 @@ def initiate_stk_push(phone_number, amount, order_id, access_token):
     
     is_sandbox = config.get('MPESA_ENVIRONMENT', 'sandbox') == 'sandbox'
     
-    # SANDBOX WORKAROUND: Simulate successful STK push
-    # In production, this would be the real API call
     if is_sandbox:
         print(f"SANDBOX MODE: Simulating STK push for order {order_id}")
-        
-        # Generate fake checkout request ID
         checkout_id = 'ws_' + ''.join(random.choices(string.ascii_lowercase + string.digits, k=15))
-        
-        # Return simulated success response
         return {
             "MerchantRequestID": ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)),
             "CheckoutRequestID": checkout_id,
@@ -70,7 +64,6 @@ def initiate_stk_push(phone_number, amount, order_id, access_token):
             "CustomerMessage": "Success. Request accepted for processing"
         }
     
-    # PRODUCTION: Real API call
     base_url = 'https://api.safaricom.co.ke'
     
     phone = str(phone_number).strip()
@@ -163,6 +156,76 @@ def get_order(id):
     except Exception as e:
         return cors_response({'success': False, 'message': str(e)}, 404)
 
+@orders_bp.route('/orders/track', methods=['GET', 'OPTIONS'])
+def track_order():
+    """Public endpoint for customers to track their orders"""
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+        return response
+    
+    try:
+        order_id = request.args.get('order_id', type=int)
+        email = request.args.get('email', '').strip().lower()
+        phone = request.args.get('phone', '').strip()
+        
+        if not order_id and not email and not phone:
+            return cors_response({
+                'success': False,
+                'message': 'Please provide Order ID, Email, or Phone number'
+            }, 400)
+        
+        if order_id:
+            order = Order.query.get(order_id)
+            if not order:
+                return cors_response({
+                    'success': False,
+                    'message': 'Order not found'
+                }, 404)
+            
+            if email and order.customer_email and order.customer_email.lower() != email:
+                return cors_response({
+                    'success': False,
+                    'message': 'Details do not match our records'
+                }, 403)
+            
+            if phone:
+                clean_phone = phone.replace('+', '').replace(' ', '')
+                order_phone = (order.customer_phone or '').replace('+', '').replace(' ', '')
+                if clean_phone not in order_phone and order_phone not in clean_phone:
+                    return cors_response({
+                        'success': False,
+                        'message': 'Details do not match our records'
+                    }, 403)
+            
+            return cors_response({
+                'success': True,
+                'order': order.to_dict()
+            }, 200)
+        
+        query = Order.query
+        if email:
+            query = query.filter(db.func.lower(Order.customer_email) == email)
+        if phone:
+            clean_phone = phone.replace('+', '').replace(' ', '')
+            query = query.filter(Order.customer_phone.contains(clean_phone))
+        
+        orders = query.order_by(Order.created_at.desc()).all()
+        
+        return cors_response({
+            'success': True,
+            'count': len(orders),
+            'orders': [o.to_dict() for o in orders]
+        }, 200)
+        
+    except Exception as e:
+        import traceback
+        print(f"ERROR in track_order: {str(e)}")
+        print(traceback.format_exc())
+        return cors_response({'success': False, 'message': str(e)}, 500)
+
 @orders_bp.route('/orders', methods=['POST', 'OPTIONS'])
 def create_order():
     if request.method == 'OPTIONS':
@@ -173,7 +236,6 @@ def create_order():
     try:
         data = request.get_json()
         
-        # Validation
         if not data or not data.get('items') or not data.get('customer_name') or not data.get('customer_phone'):
             return cors_response({
                 'success': False, 
@@ -183,7 +245,6 @@ def create_order():
         items = data.get('items')
         phone_number = data.get('customer_phone')
         
-        # Validate items and calculate total
         total_amount = 0
         validated_items = []
         
@@ -222,7 +283,6 @@ def create_order():
                 'message': 'Order total must be greater than 0'
             }, 400)
         
-        # Create order
         order = Order(
             customer_name=data.get('customer_name').strip(),
             customer_email=data.get('customer_email', '').strip(),
@@ -238,7 +298,6 @@ def create_order():
         db.session.add(order)
         db.session.flush()
         
-        # Get M-Pesa token
         access_token = get_mpesa_access_token()
         
         if not access_token:
@@ -248,7 +307,6 @@ def create_order():
                 'message': 'Unable to connect to payment service. Please try again.'
             }, 503)
         
-        # Initiate STK Push
         stk_response = initiate_stk_push(phone_number, total_amount, order.id, access_token)
         
         response_code = stk_response.get('ResponseCode')
@@ -257,7 +315,6 @@ def create_order():
             order.payment_status = 'initiated'
             order.mpesa_checkout_request_id = stk_response.get('CheckoutRequestID')
             
-            # Update stock
             for item in validated_items:
                 product = Product.query.get(item['product_id'])
                 product.stock -= item['quantity']
@@ -337,7 +394,6 @@ def delete_order(id):
 
 @orders_bp.route('/mpesa/callback', methods=['POST', 'OPTIONS'])
 def mpesa_callback():
-    """Handle M-Pesa payment callback - SANDBOX WORKAROUND"""
     if request.method == 'OPTIONS':
         response = make_response()
         response.headers.add('Access-Control-Allow-Origin', '*')
@@ -347,15 +403,12 @@ def mpesa_callback():
         data = request.get_json()
         print(f"M-Pesa Callback received: {json.dumps(data, indent=2)}")
         
-        # SANDBOX WORKAROUND: Simulate successful callback if no real data
         config = current_app.config
         is_sandbox = config.get('MPESA_ENVIRONMENT', 'sandbox') == 'sandbox'
         
         if is_sandbox and not data.get('Body'):
-            # This is a manual test call, simulate success
             return cors_response({'success': True, 'message': 'Sandbox callback simulated'}, 200)
         
-        # PRODUCTION: Real callback processing
         stk_callback = data.get('Body', {}).get('stkCallback', {})
         result_code = stk_callback.get('ResultCode')
         checkout_request_id = stk_callback.get('CheckoutRequestID')
@@ -403,7 +456,6 @@ def mpesa_callback():
 
 @orders_bp.route('/orders/<int:id>/payment-status', methods=['GET', 'OPTIONS'])
 def check_payment_status(id):
-    """Check payment status of an order"""
     if request.method == 'OPTIONS':
         response = make_response()
         response.headers.add('Access-Control-Allow-Origin', '*')
@@ -412,15 +464,12 @@ def check_payment_status(id):
     try:
         order = Order.query.get_or_404(id)
         
-        # SANDBOX WORKAROUND: Auto-complete payment after 10 seconds for testing
         config = current_app.config
         is_sandbox = config.get('MPESA_ENVIRONMENT', 'sandbox') == 'sandbox'
         
         if is_sandbox and order.payment_status == 'initiated':
-            # Check if order was created more than 10 seconds ago
             time_diff = (datetime.utcnow() - order.created_at).total_seconds()
             if time_diff > 10:
-                # Simulate successful payment
                 order.payment_status = 'completed'
                 order.status = 'processing'
                 order.mpesa_receipt_number = 'TEST' + ''.join(random.choices(string.digits, k=8))
@@ -437,11 +486,9 @@ def check_payment_status(id):
     except Exception as e:
         return cors_response({'success': False, 'message': str(e)}, 500)
 
-# Admin endpoint to manually confirm payment (for testing)
 @orders_bp.route('/orders/<int:id>/confirm-payment', methods=['POST', 'OPTIONS'])
 @jwt_required()
 def confirm_payment(id):
-    """Manually confirm payment (admin only - for testing)"""
     if request.method == 'OPTIONS':
         response = make_response()
         response.headers.add('Access-Control-Allow-Origin', '*')
