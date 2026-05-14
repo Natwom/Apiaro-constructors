@@ -230,7 +230,7 @@ def create_order():
         data = request.get_json()
         if not data or not data.get('items') or not data.get('customer_name') or not data.get('customer_phone'):
             return cors_response({
-                'success': False, 
+                'success': False,
                 'message': 'Order items, customer name, and phone number are required'
             }, 400)
         items = data.get('items')
@@ -246,12 +246,12 @@ def create_order():
             product = Product.query.get(product_id)
             if not product:
                 return cors_response({
-                    'success': False, 
+                    'success': False,
                     'message': f'Product {product_id} not found'
                 }, 404)
             if product.stock < quantity:
                 return cors_response({
-                    'success': False, 
+                    'success': False,
                     'message': f'Insufficient stock for {product.name}. Available: {product.stock}'
                 }, 400)
             product_image = get_product_image_url(product)
@@ -266,7 +266,7 @@ def create_order():
             total_amount += float(product.price) * quantity
         if total_amount <= 0:
             return cors_response({
-                'success': False, 
+                'success': False,
                 'message': 'Order total must be greater than 0'
             }, 400)
         order = Order(
@@ -461,8 +461,127 @@ def confirm_payment(id):
 
 
 # ============================================
-# REVENUE ANALYTICS — DEBUG VERSION (FAKE DATA)
+# REVENUE ANALYTICS — REAL DATA
 # ============================================
+
+def _safe_amount(val):
+    if val is None:
+        return 0.0
+    try:
+        return float(val)
+    except:
+        return 0.0
+
+def get_daily_revenue():
+    try:
+        end = datetime.utcnow().date()
+        start = end - timedelta(days=29)
+        data = OrderedDict()
+        for i in range(30):
+            d = start + timedelta(days=i)
+            key = d.strftime('%Y-%m-%d')
+            data[key] = {
+                'period': key,
+                'label': d.strftime('%a %d'),
+                'revenue': 0.0,
+                'orders': 0
+            }
+        start_dt = datetime.combine(start, datetime.min.time())
+        end_dt = datetime.combine(end, datetime.max.time())
+        orders = Order.query.all()
+        for order in orders:
+            try:
+                if not order or not order.created_at:
+                    continue
+                if getattr(order, 'status', None) == 'cancelled':
+                    continue
+                created = order.created_at
+                if not hasattr(created, 'year'):
+                    continue
+                if created < start_dt or created > end_dt:
+                    continue
+                key = created.strftime('%Y-%m-%d')
+                if key in data:
+                    data[key]['revenue'] += _safe_amount(order.total_amount)
+                    data[key]['orders'] += 1
+            except Exception:
+                continue
+        return list(data.values())
+    except Exception as e:
+        import traceback
+        print(f"DAILY REVENUE CRASH: {e}\n{traceback.format_exc()}")
+        return []
+
+def get_monthly_revenue():
+    try:
+        end = datetime.utcnow()
+        start = (end.replace(day=1) - timedelta(days=365)).replace(day=1)
+        data = OrderedDict()
+        current = start
+        for _ in range(12):
+            key = current.strftime('%Y-%m')
+            data[key] = {
+                'period': key,
+                'label': current.strftime('%b %Y'),
+                'revenue': 0.0,
+                'orders': 0
+            }
+            if current.month == 12:
+                current = current.replace(year=current.year + 1, month=1)
+            else:
+                current = current.replace(month=current.month + 1)
+        orders = Order.query.all()
+        for order in orders:
+            try:
+                if not order or not order.created_at:
+                    continue
+                if getattr(order, 'status', None) == 'cancelled':
+                    continue
+                created = order.created_at
+                if not hasattr(created, 'year') or created < start:
+                    continue
+                key = created.strftime('%Y-%m')
+                if key in data:
+                    data[key]['revenue'] += _safe_amount(order.total_amount)
+                    data[key]['orders'] += 1
+            except Exception:
+                continue
+        return list(data.values())
+    except Exception as e:
+        import traceback
+        print(f"MONTHLY REVENUE CRASH: {e}\n{traceback.format_exc()}")
+        return []
+
+def get_yearly_revenue():
+    try:
+        data = {}
+        orders = Order.query.all()
+        for order in orders:
+            try:
+                if not order or not order.created_at:
+                    continue
+                if getattr(order, 'status', None) == 'cancelled':
+                    continue
+                created = order.created_at
+                if not hasattr(created, 'year'):
+                    continue
+                key = created.strftime('%Y')
+                if key not in data:
+                    data[key] = {
+                        'period': key,
+                        'label': key,
+                        'revenue': 0.0,
+                        'orders': 0
+                    }
+                data[key]['revenue'] += _safe_amount(order.total_amount)
+                data[key]['orders'] += 1
+            except Exception:
+                continue
+        return sorted(data.values(), key=lambda x: x['period'])
+    except Exception as e:
+        import traceback
+        print(f"YEARLY REVENUE CRASH: {e}\n{traceback.format_exc()}")
+        return []
 
 @orders_bp.route('/orders/revenue', methods=['GET', 'OPTIONS'])
 @jwt_required()
@@ -473,45 +592,34 @@ def get_revenue():
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
         response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
         return response
-    
     try:
-        print("=== REVENUE ENDPOINT HIT ===")
-        
         user_id = get_jwt_identity()
-        print(f"User ID from token: {user_id}")
-        
         user = User.query.get(user_id)
-        print(f"User lookup result: {user}")
-        
-        if not user:
-            print("User not found - returning 403")
+        if not user or not user.is_active:
             return cors_response({'success': False, 'message': 'Unauthorized'}, 403)
-        
-        if not user.is_active:
-            print("User inactive - returning 403")
-            return cors_response({'success': False, 'message': 'Unauthorized'}, 403)
-        
-        print("Admin check passed - returning fake data")
-        
-        # DEBUG: Return hardcoded fake data to test if the pipe works
-        fake_data = [
-            {'period': '2026-05-10', 'label': 'Sun 10', 'revenue': 150000.0, 'orders': 2},
-            {'period': '2026-05-11', 'label': 'Mon 11', 'revenue': 230000.0, 'orders': 3},
-            {'period': '2026-05-12', 'label': 'Tue 12', 'revenue': 0.0, 'orders': 0},
-            {'period': '2026-05-13', 'label': 'Wed 13', 'revenue': 450000.0, 'orders': 5},
-            {'period': '2026-05-14', 'label': 'Thu 14', 'revenue': 120000.0, 'orders': 1},
-        ]
-        
+        period = request.args.get('period', 'daily')
+        if period == 'daily':
+            data = get_daily_revenue()
+        elif period == 'monthly':
+            data = get_monthly_revenue()
+        elif period == 'yearly':
+            data = get_yearly_revenue()
+        else:
+            return cors_response({
+                'success': False,
+                'message': 'Invalid period. Use daily, monthly, or yearly'
+            }, 400)
+        total_revenue = sum(d['revenue'] for d in data)
+        total_orders = sum(d['orders'] for d in data)
         return cors_response({
             'success': True,
-            'period': 'daily',
-            'data': fake_data,
+            'period': period,
+            'data': data,
             'summary': {
-                'total_revenue': 950000.0,
-                'total_orders': 11
+                'total_revenue': total_revenue,
+                'total_orders': total_orders
             }
         }, 200)
-        
     except Exception as e:
         import traceback
         error_detail = traceback.format_exc()
@@ -521,3 +629,19 @@ def get_revenue():
             'message': str(e),
             'detail': error_detail
         }, 500)
+
+
+# ============================================
+# DEPLOYMENT TEST — No auth required
+# ============================================
+@orders_bp.route('/orders/revenue-test', methods=['GET', 'OPTIONS'])
+def revenue_test():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+    return cors_response({
+        'success': True,
+        'message': 'Route is live and file is deployed',
+        'timestamp': datetime.utcnow().isoformat()
+    }, 200)
