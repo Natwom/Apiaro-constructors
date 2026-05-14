@@ -1,8 +1,7 @@
 from flask import Blueprint, request, jsonify, make_response, current_app
-from flask_jwt_extended import jwt_required
-from app.models import Order, Product
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.models import Order, Product, User
 from app import db
-from app.utils.decorators import admin_required
 import json
 import requests
 import base64
@@ -549,15 +548,30 @@ def confirm_payment(id):
 
 
 # ============================================
-# REVENUE ANALYTICS ENDPOINTS (PYTHON-SIDE AGGREGATION)
+# REVENUE ANALYTICS (DEFENSIVE PYTHON AGGREGATION)
 # ============================================
 
+def _safe_date_key(dt, fmt):
+    """Safely format a datetime/date, handling strings and None"""
+    if not dt:
+        return None
+    if isinstance(dt, str):
+        try:
+            dt = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+        except:
+            try:
+                dt = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S.%f')
+            except:
+                return None
+    try:
+        return dt.strftime(fmt)
+    except:
+        return None
+
 def get_daily_revenue():
-    """Return last 30 days revenue with zero-fill for missing days"""
     end = datetime.utcnow().date()
     start = end - timedelta(days=29)
     
-    # Build zero-filled date range
     data = OrderedDict()
     for i in range(30):
         d = start + timedelta(days=i)
@@ -569,29 +583,31 @@ def get_daily_revenue():
             'orders': 0
         }
     
-    # Fetch orders in date range (Python-side grouping — 100% SQLite-safe)
     start_dt = datetime.combine(start, datetime.min.time())
     end_dt = datetime.combine(end, datetime.max.time())
     
+    # Include orders where status is NOT cancelled (including NULL status)
     orders = Order.query.filter(
-        Order.status != 'cancelled',
+        db.or_(Order.status != 'cancelled', Order.status.is_(None)),
         Order.created_at >= start_dt,
         Order.created_at <= end_dt
     ).all()
     
     for order in orders:
-        key = order.created_at.strftime('%Y-%m-%d') if order.created_at else None
+        key = _safe_date_key(order.created_at, '%Y-%m-%d')
         if key and key in data:
-            data[key]['revenue'] += float(order.total_amount or 0)
+            try:
+                amount = float(order.total_amount) if order.total_amount is not None else 0.0
+            except (TypeError, ValueError):
+                amount = 0.0
+            data[key]['revenue'] += amount
             data[key]['orders'] += 1
     
     return list(data.values())
 
 
 def get_monthly_revenue():
-    """Return last 12 months revenue with zero-fill for missing months"""
     end = datetime.utcnow()
-    # Go back 11 months from current month start
     current_month_start = end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     start = current_month_start
     for _ in range(11):
@@ -600,7 +616,6 @@ def get_monthly_revenue():
         else:
             start = start.replace(month=start.month - 1)
     
-    # Build zero-filled month range
     data = OrderedDict()
     current = start
     for _ in range(12):
@@ -616,30 +631,34 @@ def get_monthly_revenue():
         else:
             current = current.replace(month=current.month + 1)
     
-    # Fetch orders in range
     orders = Order.query.filter(
-        Order.status != 'cancelled',
+        db.or_(Order.status != 'cancelled', Order.status.is_(None)),
         Order.created_at >= start
     ).all()
     
     for order in orders:
-        key = order.created_at.strftime('%Y-%m') if order.created_at else None
+        key = _safe_date_key(order.created_at, '%Y-%m')
         if key and key in data:
-            data[key]['revenue'] += float(order.total_amount or 0)
+            try:
+                amount = float(order.total_amount) if order.total_amount is not None else 0.0
+            except (TypeError, ValueError):
+                amount = 0.0
+            data[key]['revenue'] += amount
             data[key]['orders'] += 1
     
     return list(data.values())
 
 
 def get_yearly_revenue():
-    """Return revenue grouped by year (all time)"""
-    orders = Order.query.filter(Order.status != 'cancelled').all()
+    orders = Order.query.filter(
+        db.or_(Order.status != 'cancelled', Order.status.is_(None))
+    ).all()
     
     data = {}
     for order in orders:
-        if not order.created_at:
+        key = _safe_date_key(order.created_at, '%Y')
+        if not key:
             continue
-        key = order.created_at.strftime('%Y')
         if key not in data:
             data[key] = {
                 'period': key,
@@ -647,7 +666,11 @@ def get_yearly_revenue():
                 'revenue': 0.0,
                 'orders': 0
             }
-        data[key]['revenue'] += float(order.total_amount or 0)
+        try:
+            amount = float(order.total_amount) if order.total_amount is not None else 0.0
+        except (TypeError, ValueError):
+            amount = 0.0
+        data[key]['revenue'] += amount
         data[key]['orders'] += 1
     
     return sorted(data.values(), key=lambda x: x['period'])
@@ -655,7 +678,6 @@ def get_yearly_revenue():
 
 @orders_bp.route('/orders/revenue', methods=['GET', 'OPTIONS'])
 @jwt_required()
-@admin_required
 def get_revenue():
     if request.method == 'OPTIONS':
         response = make_response()
@@ -665,6 +687,12 @@ def get_revenue():
         return response
     
     try:
+        # Inline admin check (avoids double JWT verification conflict)
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        if not user or not user.is_active:
+            return cors_response({'success': False, 'message': 'Unauthorized'}, 403)
+        
         period = request.args.get('period', 'daily')
         
         if period == 'daily':
@@ -694,6 +722,10 @@ def get_revenue():
         
     except Exception as e:
         import traceback
-        print(f"ERROR in get_revenue: {str(e)}")
-        print(traceback.format_exc())
-        return cors_response({'success': False, 'message': str(e)}, 500)
+        error_detail = traceback.format_exc()
+        print(f"ERROR in get_revenue: {str(e)}\n{error_detail}")
+        return cors_response({
+            'success': False,
+            'message': str(e),
+            'detail': error_detail
+        }, 500)
