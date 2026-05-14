@@ -19,6 +19,17 @@ def cors_response(data, status=200):
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
+def normalize_phone(phone):
+    """Normalize phone number to 254XXXXXXXXX format for consistent comparison"""
+    if not phone:
+        return ''
+    phone = str(phone).strip().replace('+', '').replace(' ', '').replace('-', '')
+    if phone.startswith('0'):
+        phone = '254' + phone[1:]
+    elif not phone.startswith('254'):
+        phone = '254' + phone
+    return phone
+
 def get_mpesa_access_token():
     """Get M-Pesa OAuth access token"""
     config = current_app.config
@@ -66,13 +77,7 @@ def initiate_stk_push(phone_number, amount, order_id, access_token):
     
     base_url = 'https://api.safaricom.co.ke'
     
-    phone = str(phone_number).strip()
-    if phone.startswith('+'):
-        phone = phone[1:]
-    if phone.startswith('0'):
-        phone = '254' + phone[1:]
-    if not phone.startswith('254'):
-        phone = '254' + phone
+    phone = normalize_phone(phone_number)
     
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     shortcode = str(config.get('MPESA_SHORTCODE', ''))
@@ -178,7 +183,6 @@ def track_order():
             }, 400)
         
         # If order_id provided, look it up directly
-        # Only verify email/phone if they were ALSO provided in the request
         if order_id:
             order = Order.query.get(order_id)
             if not order:
@@ -196,10 +200,11 @@ def track_order():
                     }, 403)
             
             # Verify phone only if it was provided in the request
+            # Use normalized comparison
             if phone:
-                clean_phone = phone.replace('+', '').replace(' ', '')
-                order_phone = (order.customer_phone or '').replace('+', '').replace(' ', '')
-                if clean_phone not in order_phone and order_phone not in clean_phone:
+                normalized_input = normalize_phone(phone)
+                normalized_stored = normalize_phone(order.customer_phone)
+                if normalized_input != normalized_stored:
                     return cors_response({
                         'success': False,
                         'message': 'Details do not match our records'
@@ -215,8 +220,15 @@ def track_order():
         if email:
             query = query.filter(db.func.lower(Order.customer_email) == email)
         if phone:
-            clean_phone = phone.replace('+', '').replace(' ', '')
-            query = query.filter(Order.customer_phone.contains(clean_phone))
+            normalized_phone = normalize_phone(phone)
+            # Use LIKE query with the normalized phone to match any format stored
+            query = query.filter(
+                db.or_(
+                    Order.customer_phone == normalized_phone,
+                    Order.customer_phone == phone,
+                    Order.customer_phone.like(f'%{normalized_phone[3:]}')  # match last 9 digits
+                )
+            )
         
         orders = query.order_by(Order.created_at.desc()).all()
         
@@ -250,6 +262,9 @@ def create_order():
         
         items = data.get('items')
         phone_number = data.get('customer_phone')
+        
+        # Normalize phone before storing
+        normalized_phone = normalize_phone(phone_number)
         
         total_amount = 0
         validated_items = []
@@ -292,7 +307,7 @@ def create_order():
         order = Order(
             customer_name=data.get('customer_name').strip(),
             customer_email=data.get('customer_email', '').strip(),
-            customer_phone=str(phone_number).strip(),
+            customer_phone=normalized_phone,  # Store normalized phone
             customer_address=data.get('customer_address', '').strip(),
             items=json.dumps(validated_items),
             total_amount=total_amount,
