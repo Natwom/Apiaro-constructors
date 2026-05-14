@@ -74,7 +74,6 @@
         </main>
     </div>
 
-    <!-- Product Modal -->
     <div id="productModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -140,10 +139,20 @@
     <script src="js/auth.js"></script>
     <script src="js/admin.js"></script>
     <script>
+        // IMMEDIATE auth check
+        (function() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.replace('login.html');
+                throw new Error('Auth required');
+            }
+        })();
+
         let allProducts = [];
         
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAuth();
+        document.addEventListener('DOMContentLoaded', async function() {
+            const authed = await checkAuth();
+            if (!authed) return;
             loadProducts();
         });
         

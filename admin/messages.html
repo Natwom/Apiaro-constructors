@@ -47,7 +47,6 @@
         </main>
     </div>
 
-    <!-- Message Detail Modal -->
     <div id="messageModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -55,7 +54,6 @@
                 <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
             <div class="message-detail" id="messageDetail">
-                <!-- Content loaded dynamically -->
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal()">Close</button>
@@ -66,18 +64,25 @@
         </div>
     </div>
 
-    <!-- Scripts - ONLY 2 files, NO frontend/api.js -->
-    
-<script src="js/api.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/admin.js"></script>
-
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
     <script>
+        // IMMEDIATE auth check
+        (function() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.replace('login.html');
+                throw new Error('Auth required');
+            }
+        })();
+
         let currentMessageId = null;
         let allMessages = [];
         
         document.addEventListener('DOMContentLoaded', async function() {
-            await checkAuth();
+            const authed = await checkAuth();
+            if (!authed) return;
             await loadMessages();
         });
         

@@ -79,7 +79,6 @@
         </main>
     </div>
 
-    <!-- Project Modal -->
     <div id="projectModal" class="modal">
         <div class="modal-content large">
             <div class="modal-header">
@@ -159,10 +158,20 @@
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script>
+        // IMMEDIATE auth check
+        (function() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.replace('login.html');
+                throw new Error('Auth required');
+            }
+        })();
+
         let allProjects = [];
         
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAuth();
+        document.addEventListener('DOMContentLoaded', async function() {
+            const authed = await checkAuth();
+            if (!authed) return;
             loadProjects();
         });
         

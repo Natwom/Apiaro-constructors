@@ -73,10 +73,7 @@
             const btnLoader = document.querySelector('.btn-loader');
             const loginBtn = document.getElementById('loginBtn');
             
-            // Hide error
             errorDiv.style.display = 'none';
-            
-            // Show loading
             btnText.style.display = 'none';
             btnLoader.style.display = 'inline';
             loginBtn.disabled = true;
@@ -112,11 +109,8 @@
             }
         }
         
-        // Check if already logged in
-        if (localStorage.getItem('admin_token')) {
-            console.log('Already logged in, redirecting to dashboard');
-            window.location.href = 'dashboard.html';
-        }
+        // REMOVED: No auto-redirect. User must always click login.
+        // index.html handles the redirect decision.
     </script>
 </body>
 </html>
