@@ -184,4 +184,17 @@ def create_app(config_name='default'):
         tables = inspector.get_table_names()
         print(f'✅ Database tables: {tables}')
     
+        # Catch ANY unhandled exception and add CORS headers
+    @app.errorhandler(Exception)
+    def handle_all_exceptions(e):
+        db.session.rollback()
+        response = jsonify({
+            'success': False,
+            'error': 'Unhandled exception',
+            'message': str(e)
+        })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        return response, 500
     return app

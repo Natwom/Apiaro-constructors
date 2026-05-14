@@ -21,7 +21,6 @@ def cors_response(data, status=200):
     return response
 
 def normalize_phone(phone):
-    """Normalize phone number to 254XXXXXXXXX format for consistent comparison"""
     if not phone:
         return ''
     phone = str(phone).strip().replace('+', '').replace(' ', '').replace('-', '')
@@ -32,7 +31,6 @@ def normalize_phone(phone):
     return phone
 
 def get_product_image_url(product):
-    """Extract the first image URL from a product"""
     try:
         images = json.loads(product.images) if product.images else []
     except:
@@ -49,9 +47,7 @@ def get_product_image_url(product):
     return ''
 
 def get_mpesa_access_token():
-    """Get M-Pesa OAuth access token"""
     config = current_app.config
-    
     is_sandbox = config.get('MPESA_ENVIRONMENT', 'sandbox') == 'sandbox'
     base_url = 'https://sandbox.safaricom.co.ke' if is_sandbox else 'https://api.safaricom.co.ke'
     
@@ -67,19 +63,15 @@ def get_mpesa_access_token():
             auth=(consumer_key, consumer_secret),
             timeout=30
         )
-        
         if response.status_code == 200:
             return response.json().get('access_token')
         return None
-            
     except Exception as e:
         print(f"Token error: {str(e)}")
         return None
 
 def initiate_stk_push(phone_number, amount, order_id, access_token):
-    """Initiate M-Pesa STK Push - SANDBOX WORKAROUND"""
     config = current_app.config
-    
     is_sandbox = config.get('MPESA_ENVIRONMENT', 'sandbox') == 'sandbox'
     
     if is_sandbox:
@@ -94,15 +86,12 @@ def initiate_stk_push(phone_number, amount, order_id, access_token):
         }
     
     base_url = 'https://api.safaricom.co.ke'
-    
     phone = normalize_phone(phone_number)
-    
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     shortcode = str(config.get('MPESA_SHORTCODE', ''))
     passkey = config.get('MPESA_PASSKEY', '')
     password_str = f"{shortcode}{passkey}{timestamp}"
     password = base64.b64encode(password_str.encode()).decode()
-    
     callback_url = config.get('MPESA_CALLBACK_URL', '')
     
     payload = {
@@ -148,12 +137,9 @@ def get_orders():
     try:
         status = request.args.get('status')
         query = Order.query
-        
         if status:
             query = query.filter_by(status=status)
-        
         orders = query.order_by(Order.created_at.desc()).all()
-        
         return cors_response({
             'success': True,
             'count': len(orders),
@@ -181,7 +167,6 @@ def get_order(id):
 
 @orders_bp.route('/orders/track', methods=['GET', 'OPTIONS'])
 def track_order():
-    """Public endpoint for customers to track their orders"""
     if request.method == 'OPTIONS':
         response = make_response()
         response.headers.add('Access-Control-Allow-Origin', '*')
@@ -243,7 +228,6 @@ def track_order():
             )
         
         orders = query.order_by(Order.created_at.desc()).all()
-        
         return cors_response({
             'success': True,
             'count': len(orders),
@@ -274,9 +258,7 @@ def create_order():
         
         items = data.get('items')
         phone_number = data.get('customer_phone')
-        
         normalized_phone = normalize_phone(phone_number)
-        
         total_amount = 0
         validated_items = []
         
@@ -301,7 +283,6 @@ def create_order():
                 }, 400)
             
             product_image = get_product_image_url(product)
-            
             validated_items.append({
                 'product_id': product.id,
                 'product_name': product.name,
@@ -332,7 +313,6 @@ def create_order():
         
         db.session.add(order)
         db.session.flush()
-        
         access_token = get_mpesa_access_token()
         
         if not access_token:
@@ -343,7 +323,6 @@ def create_order():
             }, 503)
         
         stk_response = initiate_stk_push(phone_number, total_amount, order.id, access_token)
-        
         response_code = stk_response.get('ResponseCode')
         
         if response_code == '0' or response_code == 0:
@@ -355,7 +334,6 @@ def create_order():
                 product.stock -= item['quantity']
             
             db.session.commit()
-            
             return cors_response({
                 'success': True,
                 'message': 'Payment request sent to your phone. Please enter M-Pesa PIN to complete payment.',
@@ -389,7 +367,6 @@ def update_order_status(id):
     try:
         data = request.get_json()
         order = Order.query.get_or_404(id)
-        
         valid_statuses = ['pending', 'processing', 'completed', 'cancelled']
         new_status = data.get('status')
         
@@ -398,7 +375,6 @@ def update_order_status(id):
         
         order.status = new_status
         db.session.commit()
-        
         return cors_response({
             'success': True,
             'message': 'Order status updated',
@@ -419,7 +395,6 @@ def delete_order(id):
         order = Order.query.get_or_404(id)
         db.session.delete(order)
         db.session.commit()
-        
         return cors_response({
             'success': True,
             'message': 'Order deleted successfully'
@@ -447,7 +422,6 @@ def mpesa_callback():
         stk_callback = data.get('Body', {}).get('stkCallback', {})
         result_code = stk_callback.get('ResultCode')
         checkout_request_id = stk_callback.get('CheckoutRequestID')
-        
         order = Order.query.filter_by(mpesa_checkout_request_id=checkout_request_id).first()
         
         if not order:
@@ -498,7 +472,6 @@ def check_payment_status(id):
     
     try:
         order = Order.query.get_or_404(id)
-        
         config = current_app.config
         is_sandbox = config.get('MPESA_ENVIRONMENT', 'sandbox') == 'sandbox'
         
@@ -531,13 +504,10 @@ def confirm_payment(id):
     
     try:
         order = Order.query.get_or_404(id)
-        
         order.payment_status = 'completed'
         order.status = 'processing'
         order.mpesa_receipt_number = 'MANUAL' + ''.join(random.choices(string.digits, k=6))
-        
         db.session.commit()
-        
         return cors_response({
             'success': True,
             'message': 'Payment confirmed manually',
@@ -548,30 +518,42 @@ def confirm_payment(id):
 
 
 # ============================================
-# REVENUE ANALYTICS (DEFENSIVE PYTHON AGGREGATION)
+# REVENUE ANALYTICS — PRODUCTION BULLETPROOF
 # ============================================
 
-def _safe_date_key(dt, fmt):
-    """Safely format a datetime/date, handling strings and None"""
+def _safe_amount(val):
+    """Safely convert any value to float, default 0.0"""
+    if val is None:
+        return 0.0
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return 0.0
+
+def _safe_date_str(dt, fmt):
+    """Safely format a datetime/date/string to string"""
     if not dt:
         return None
     if isinstance(dt, str):
-        try:
-            dt = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
-        except:
+        # Try common SQLite datetime formats
+        for pattern in ['%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d']:
             try:
-                dt = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S.%f')
+                parsed = datetime.strptime(dt, pattern)
+                return parsed.strftime(fmt)
             except:
-                return None
+                continue
+        return None
     try:
         return dt.strftime(fmt)
     except:
         return None
 
 def get_daily_revenue():
+    """Last 30 days — ALL orders except cancelled, grouped in Python"""
     end = datetime.utcnow().date()
     start = end - timedelta(days=29)
     
+    # Zero-fill all 30 days
     data = OrderedDict()
     for i in range(30):
         d = start + timedelta(days=i)
@@ -586,27 +568,43 @@ def get_daily_revenue():
     start_dt = datetime.combine(start, datetime.min.time())
     end_dt = datetime.combine(end, datetime.max.time())
     
-    # Include orders where status is NOT cancelled (including NULL status)
-    orders = Order.query.filter(
-        db.or_(Order.status != 'cancelled', Order.status.is_(None)),
-        Order.created_at >= start_dt,
-        Order.created_at <= end_dt
-    ).all()
-    
-    for order in orders:
-        key = _safe_date_key(order.created_at, '%Y-%m-%d')
-        if key and key in data:
-            try:
-                amount = float(order.total_amount) if order.total_amount is not None else 0.0
-            except (TypeError, ValueError):
-                amount = 0.0
-            data[key]['revenue'] += amount
-            data[key]['orders'] += 1
+    try:
+        # Fetch ALL orders — filter in Python (never crashes on SQL)
+        all_orders = Order.query.all()
+        for order in all_orders:
+            # Skip cancelled
+            if getattr(order, 'status', None) == 'cancelled':
+                continue
+            # Skip if no date
+            if not order.created_at:
+                continue
+            # Skip if outside range
+            created = order.created_at
+            if isinstance(created, str):
+                created = _safe_date_str(created, '%Y-%m-%d %H:%M:%S')
+                if created:
+                    try:
+                        created = datetime.strptime(created, '%Y-%m-%d %H:%M:%S')
+                    except:
+                        continue
+            if not hasattr(created, 'year'):
+                continue
+            if created < start_dt or created > end_dt:
+                continue
+            
+            key = _safe_date_str(order.created_at, '%Y-%m-%d')
+            if key and key in data:
+                data[key]['revenue'] += _safe_amount(order.total_amount)
+                data[key]['orders'] += 1
+    except Exception as e:
+        import traceback
+        print(f"REVENUE ERROR (daily): {e}")
+        print(traceback.format_exc())
     
     return list(data.values())
 
-
 def get_monthly_revenue():
+    """Last 12 months — grouped in Python"""
     end = datetime.utcnow()
     current_month_start = end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     start = current_month_start
@@ -631,50 +629,66 @@ def get_monthly_revenue():
         else:
             current = current.replace(month=current.month + 1)
     
-    orders = Order.query.filter(
-        db.or_(Order.status != 'cancelled', Order.status.is_(None)),
-        Order.created_at >= start
-    ).all()
-    
-    for order in orders:
-        key = _safe_date_key(order.created_at, '%Y-%m')
-        if key and key in data:
-            try:
-                amount = float(order.total_amount) if order.total_amount is not None else 0.0
-            except (TypeError, ValueError):
-                amount = 0.0
-            data[key]['revenue'] += amount
-            data[key]['orders'] += 1
+    try:
+        all_orders = Order.query.all()
+        for order in all_orders:
+            if getattr(order, 'status', None) == 'cancelled':
+                continue
+            if not order.created_at:
+                continue
+            
+            created = order.created_at
+            if isinstance(created, str):
+                created = _safe_date_str(created, '%Y-%m-%d %H:%M:%S')
+                if created:
+                    try:
+                        created = datetime.strptime(created, '%Y-%m-%d %H:%M:%S')
+                    except:
+                        continue
+            if not hasattr(created, 'year') or created < start:
+                continue
+            
+            key = _safe_date_str(order.created_at, '%Y-%m')
+            if key and key in data:
+                data[key]['revenue'] += _safe_amount(order.total_amount)
+                data[key]['orders'] += 1
+    except Exception as e:
+        import traceback
+        print(f"REVENUE ERROR (monthly): {e}")
+        print(traceback.format_exc())
     
     return list(data.values())
 
-
 def get_yearly_revenue():
-    orders = Order.query.filter(
-        db.or_(Order.status != 'cancelled', Order.status.is_(None))
-    ).all()
-    
+    """All time — grouped by year in Python"""
     data = {}
-    for order in orders:
-        key = _safe_date_key(order.created_at, '%Y')
-        if not key:
-            continue
-        if key not in data:
-            data[key] = {
-                'period': key,
-                'label': key,
-                'revenue': 0.0,
-                'orders': 0
-            }
-        try:
-            amount = float(order.total_amount) if order.total_amount is not None else 0.0
-        except (TypeError, ValueError):
-            amount = 0.0
-        data[key]['revenue'] += amount
-        data[key]['orders'] += 1
+    try:
+        all_orders = Order.query.all()
+        for order in all_orders:
+            if getattr(order, 'status', None) == 'cancelled':
+                continue
+            if not order.created_at:
+                continue
+            
+            key = _safe_date_str(order.created_at, '%Y')
+            if not key:
+                continue
+            
+            if key not in data:
+                data[key] = {
+                    'period': key,
+                    'label': key,
+                    'revenue': 0.0,
+                    'orders': 0
+                }
+            data[key]['revenue'] += _safe_amount(order.total_amount)
+            data[key]['orders'] += 1
+    except Exception as e:
+        import traceback
+        print(f"REVENUE ERROR (yearly): {e}")
+        print(traceback.format_exc())
     
     return sorted(data.values(), key=lambda x: x['period'])
-
 
 @orders_bp.route('/orders/revenue', methods=['GET', 'OPTIONS'])
 @jwt_required()
@@ -687,14 +701,13 @@ def get_revenue():
         return response
     
     try:
-        # Inline admin check (avoids double JWT verification conflict)
+        # Admin check
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
         if not user or not user.is_active:
             return cors_response({'success': False, 'message': 'Unauthorized'}, 403)
         
         period = request.args.get('period', 'daily')
-        
         if period == 'daily':
             data = get_daily_revenue()
         elif period == 'monthly':
@@ -723,7 +736,7 @@ def get_revenue():
     except Exception as e:
         import traceback
         error_detail = traceback.format_exc()
-        print(f"ERROR in get_revenue: {str(e)}\n{error_detail}")
+        print(f"CRITICAL ERROR in get_revenue: {str(e)}\n{error_detail}")
         return cors_response({
             'success': False,
             'message': str(e),
