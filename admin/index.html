@@ -17,11 +17,6 @@
         }
         .loader {
             text-align: center;
-            animation: fadeIn 0.3s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
         .spinner {
             width: 40px;
@@ -39,16 +34,6 @@
             color: #a0a0a0;
             font-size: 14px;
         }
-        .error-fallback {
-            display: none;
-            text-align: center;
-        }
-        .error-fallback a {
-            color: #e94560;
-            text-decoration: none;
-            margin-top: 15px;
-            display: inline-block;
-        }
     </style>
 </head>
 <body>
@@ -57,33 +42,11 @@
         <p>Checking authentication...</p>
     </div>
 
-    <div class="error-fallback" id="errorFallback">
-        <p>Something went wrong.</p>
-        <a href="login.html">Go to Login</a>
-    </div>
-
     <script>
-        // IMMEDIATE execution — no delays
+        // STRICT: Always redirect to login first
+        // Backend will validate token on dashboard load
         (function() {
-            try {
-                const token = localStorage.getItem('admin_token');
-                
-                // If token exists and looks valid (not null, not empty, reasonable length)
-                if (token && token !== 'null' && token !== 'undefined' && token.length > 20) {
-                    // User is logged in → go to dashboard
-                    window.location.replace('dashboard.html');
-                } else {
-                    // No token → clear any junk and go to login
-                    localStorage.removeItem('admin_token');
-                    localStorage.removeItem('admin_user');
-                    window.location.replace('login.html');
-                }
-            } catch (e) {
-                // If localStorage is blocked or JS errors, show manual link
-                console.error('Auth check failed:', e);
-                document.getElementById('loader').style.display = 'none';
-                document.getElementById('errorFallback').style.display = 'block';
-            }
+            window.location.replace('login.html');
         })();
     </script>
 </body>
