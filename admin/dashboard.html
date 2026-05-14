@@ -120,6 +120,39 @@
                     </div>
                 </div>
 
+                <!-- Revenue Analytics Section -->
+                <div class="revenue-section">
+                    <div class="revenue-header">
+                        <h3><i class="fas fa-chart-bar"></i> Revenue Analytics</h3>
+                        <div class="period-toggle">
+                            <button class="period-btn active" data-period="daily" onclick="switchRevenuePeriod('daily')">Daily</button>
+                            <button class="period-btn" data-period="monthly" onclick="switchRevenuePeriod('monthly')">Monthly</button>
+                            <button class="period-btn" data-period="yearly" onclick="switchRevenuePeriod('yearly')">Yearly</button>
+                        </div>
+                    </div>
+                    
+                    <div class="revenue-chart-scroll">
+                        <div class="revenue-chart-container" id="revenueChart">
+                            <div class="chart-empty">Loading revenue data...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="revenue-summary" id="revenueSummary">
+                        <div class="summary-item">
+                            <h4 id="totalRevenue">UGX 0</h4>
+                            <p>Total Revenue</p>
+                        </div>
+                        <div class="summary-item">
+                            <h4 id="totalRevenueOrders">0</h4>
+                            <p>Orders</p>
+                        </div>
+                        <div class="summary-item">
+                            <h4 id="avgRevenue">UGX 0</h4>
+                            <p>Average / Period</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="dashboard-grid">
                     <div class="dashboard-card">
                         <div class="card-header">
@@ -190,6 +223,8 @@
             }
         })();
 
+        let currentRevenuePeriod = 'daily';
+
         document.addEventListener('DOMContentLoaded', async function() {
             const authed = await checkAuth();
             if (!authed) return;
@@ -198,6 +233,7 @@
             document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', options);
             
             await loadDashboardStats();
+            await loadRevenueAnalytics('daily');
         });
         
         async function loadDashboardStats() {
@@ -231,6 +267,91 @@
             } catch (error) {
                 console.error('Error loading dashboard:', error);
             }
+        }
+
+        // ============================================
+        // REVENUE ANALYTICS
+        // ============================================
+        async function loadRevenueAnalytics(period = 'daily') {
+            try {
+                currentRevenuePeriod = period;
+                const response = await apiFetch(`${API_URL}/orders/revenue?period=${period}`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    document.getElementById('revenueChart').innerHTML = 
+                        '<div class="chart-empty">Failed to load revenue data</div>';
+                    return;
+                }
+                
+                renderRevenueChart(result.data, period);
+                updateRevenueSummary(result.summary, result.data.length);
+                
+            } catch (error) {
+                console.error('Error loading revenue:', error);
+                document.getElementById('revenueChart').innerHTML = 
+                    '<div class="chart-empty">Error loading revenue data</div>';
+            }
+        }
+
+        function renderRevenueChart(data, period) {
+            const container = document.getElementById('revenueChart');
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="chart-empty">No revenue data available</div>';
+                return;
+            }
+            
+            const maxRevenue = Math.max(...data.map(d => d.revenue));
+            
+            const barsHtml = data.map((item, index) => {
+                const heightPercent = maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0;
+                const isZero = item.revenue === 0;
+                
+                // Format compact amounts for tooltip
+                let displayAmount;
+                if (item.revenue >= 1000000) {
+                    displayAmount = 'UGX ' + (item.revenue / 1000000).toFixed(1) + 'M';
+                } else if (item.revenue >= 1000) {
+                    displayAmount = 'UGX ' + (item.revenue / 1000).toFixed(0) + 'K';
+                } else {
+                    displayAmount = 'UGX ' + item.revenue.toLocaleString();
+                }
+                
+                const barStyle = isZero 
+                    ? 'height: 4px; background: #e5e7eb;' 
+                    : `height: ${Math.max(heightPercent, 1)}%; --bar-height: ${Math.max(heightPercent, 1)}%;`;
+                
+                return `
+                    <div class="chart-bar-wrapper">
+                        <div class="chart-bar ${isZero ? 'zero' : ''}" style="${barStyle}">
+                            <div class="bar-tooltip">
+                                <strong>${displayAmount}</strong><br>
+                                ${item.orders} order${item.orders !== 1 ? 's' : ''}
+                            </div>
+                        </div>
+                        <div class="bar-label" title="${item.label || item.period}">${item.label || item.period}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = barsHtml;
+        }
+
+        function updateRevenueSummary(summary, count) {
+            document.getElementById('totalRevenue').textContent = formatCurrency(summary.total_revenue || 0);
+            document.getElementById('totalRevenueOrders').textContent = summary.total_orders || 0;
+            const avg = count > 0 ? (summary.total_revenue || 0) / count : 0;
+            document.getElementById('avgRevenue').textContent = formatCurrency(avg);
+        }
+
+        function switchRevenuePeriod(period) {
+            // Update toggle buttons
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.period === period);
+            });
+            
+            loadRevenueAnalytics(period);
         }
     </script>
 </body>

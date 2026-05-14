@@ -2,12 +2,14 @@ from flask import Blueprint, request, jsonify, make_response, current_app
 from flask_jwt_extended import jwt_required
 from app.models import Order, Product
 from app import db
+from app.utils.decorators import admin_required
 import json
 import requests
 import base64
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
+from collections import OrderedDict
 from requests.auth import HTTPBasicAuth
 
 orders_bp = Blueprint('orders', __name__)
@@ -545,4 +547,145 @@ def confirm_payment(id):
             'order': order.to_dict()
         }, 200)
     except Exception as e:
+        return cors_response({'success': False, 'message': str(e)}, 500)
+
+
+# ============================================
+# REVENUE ANALYTICS ENDPOINTS
+# ============================================
+
+def get_daily_revenue():
+    """Return last 30 days revenue with zero-fill for missing days"""
+    end = datetime.utcnow().date()
+    start = end - timedelta(days=29)
+    
+    data = OrderedDict()
+    for i in range(30):
+        d = start + timedelta(days=i)
+        key = d.strftime('%Y-%m-%d')
+        data[key] = {
+            'period': key,
+            'label': d.strftime('%a %d'),
+            'revenue': 0,
+            'orders': 0
+        }
+    
+    results = db.session.query(
+        db.func.strftime('%Y-%m-%d', Order.created_at).label('day'),
+        db.func.sum(Order.total_amount).label('revenue'),
+        db.func.count(Order.id).label('orders')
+    ).filter(
+        Order.payment_status == 'completed',
+        Order.created_at >= datetime.combine(start, datetime.min.time())
+    ).group_by('day').order_by('day').all()
+    
+    for r in results:
+        if r.day in data:
+            data[r.day]['revenue'] = float(r.revenue or 0)
+            data[r.day]['orders'] = r.orders
+    
+    return list(data.values())
+
+
+def get_monthly_revenue():
+    """Return last 12 months revenue with zero-fill for missing months"""
+    end = datetime.utcnow()
+    start = (end.replace(day=1) - timedelta(days=365)).replace(day=1)
+    
+    data = OrderedDict()
+    current = start
+    for _ in range(12):
+        key = current.strftime('%Y-%m')
+        data[key] = {
+            'period': key,
+            'label': current.strftime('%b %Y'),
+            'revenue': 0,
+            'orders': 0
+        }
+        if current.month == 12:
+            current = current.replace(year=current.year + 1, month=1)
+        else:
+            current = current.replace(month=current.month + 1)
+    
+    results = db.session.query(
+        db.func.strftime('%Y-%m', Order.created_at).label('month'),
+        db.func.sum(Order.total_amount).label('revenue'),
+        db.func.count(Order.id).label('orders')
+    ).filter(
+        Order.payment_status == 'completed',
+        Order.created_at >= start
+    ).group_by('month').order_by('month').all()
+    
+    for r in results:
+        if r.month in data:
+            data[r.month]['revenue'] = float(r.revenue or 0)
+            data[r.month]['orders'] = r.orders
+    
+    return list(data.values())
+
+
+def get_yearly_revenue():
+    """Return revenue grouped by year (all time)"""
+    results = db.session.query(
+        db.func.strftime('%Y', Order.created_at).label('year'),
+        db.func.sum(Order.total_amount).label('revenue'),
+        db.func.count(Order.id).label('orders')
+    ).filter(
+        Order.payment_status == 'completed'
+    ).group_by('year').order_by('year').all()
+    
+    return [
+        {
+            'period': r.year,
+            'label': r.year,
+            'revenue': float(r.revenue or 0),
+            'orders': r.orders
+        }
+        for r in results
+    ]
+
+
+@orders_bp.route('/orders/revenue', methods=['GET', 'OPTIONS'])
+@jwt_required()
+@admin_required
+def get_revenue():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+        return response
+    
+    try:
+        period = request.args.get('period', 'daily')
+        
+        if period == 'daily':
+            data = get_daily_revenue()
+        elif period == 'monthly':
+            data = get_monthly_revenue()
+        elif period == 'yearly':
+            data = get_yearly_revenue()
+        else:
+            return cors_response({
+                'success': False,
+                'message': 'Invalid period. Use daily, monthly, or yearly'
+            }, 400)
+        
+        total_revenue = sum(d['revenue'] for d in data)
+        total_orders = sum(d['orders'] for d in data)
+        
+        return cors_response({
+            'success': True,
+            'period': period,
+            'data': data,
+            'summary': {
+                'total_revenue': total_revenue,
+                'total_orders': total_orders
+            }
+        }, 200)
+        
+    except Exception as e:
+        import traceback
+        print(f"ERROR in get_revenue: {str(e)}")
+        print(traceback.format_exc())
         return cors_response({'success': False, 'message': str(e)}, 500)
