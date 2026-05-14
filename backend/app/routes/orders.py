@@ -549,7 +549,7 @@ def confirm_payment(id):
 
 
 # ============================================
-# REVENUE ANALYTICS ENDPOINTS
+# REVENUE ANALYTICS ENDPOINTS (PYTHON-SIDE AGGREGATION)
 # ============================================
 
 def get_daily_revenue():
@@ -557,6 +557,7 @@ def get_daily_revenue():
     end = datetime.utcnow().date()
     start = end - timedelta(days=29)
     
+    # Build zero-filled date range
     data = OrderedDict()
     for i in range(30):
         d = start + timedelta(days=i)
@@ -564,24 +565,25 @@ def get_daily_revenue():
         data[key] = {
             'period': key,
             'label': d.strftime('%a %d'),
-            'revenue': 0,
+            'revenue': 0.0,
             'orders': 0
         }
     
-    # FIXED: Count ALL non-cancelled orders instead of only payment_status='completed'
-    results = db.session.query(
-        db.func.strftime('%Y-%m-%d', Order.created_at).label('day'),
-        db.func.sum(Order.total_amount).label('revenue'),
-        db.func.count(Order.id).label('orders')
-    ).filter(
-        Order.status != 'cancelled',
-        Order.created_at >= datetime.combine(start, datetime.min.time())
-    ).group_by('day').order_by('day').all()
+    # Fetch orders in date range (Python-side grouping — 100% SQLite-safe)
+    start_dt = datetime.combine(start, datetime.min.time())
+    end_dt = datetime.combine(end, datetime.max.time())
     
-    for r in results:
-        if r.day in data:
-            data[r.day]['revenue'] = float(r.revenue or 0)
-            data[r.day]['orders'] = r.orders
+    orders = Order.query.filter(
+        Order.status != 'cancelled',
+        Order.created_at >= start_dt,
+        Order.created_at <= end_dt
+    ).all()
+    
+    for order in orders:
+        key = order.created_at.strftime('%Y-%m-%d') if order.created_at else None
+        if key and key in data:
+            data[key]['revenue'] += float(order.total_amount or 0)
+            data[key]['orders'] += 1
     
     return list(data.values())
 
@@ -589,8 +591,16 @@ def get_daily_revenue():
 def get_monthly_revenue():
     """Return last 12 months revenue with zero-fill for missing months"""
     end = datetime.utcnow()
-    start = (end.replace(day=1) - timedelta(days=365)).replace(day=1)
+    # Go back 11 months from current month start
+    current_month_start = end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    start = current_month_start
+    for _ in range(11):
+        if start.month == 1:
+            start = start.replace(year=start.year - 1, month=12)
+        else:
+            start = start.replace(month=start.month - 1)
     
+    # Build zero-filled month range
     data = OrderedDict()
     current = start
     for _ in range(12):
@@ -598,7 +608,7 @@ def get_monthly_revenue():
         data[key] = {
             'period': key,
             'label': current.strftime('%b %Y'),
-            'revenue': 0,
+            'revenue': 0.0,
             'orders': 0
         }
         if current.month == 12:
@@ -606,44 +616,41 @@ def get_monthly_revenue():
         else:
             current = current.replace(month=current.month + 1)
     
-    # FIXED: Count ALL non-cancelled orders
-    results = db.session.query(
-        db.func.strftime('%Y-%m', Order.created_at).label('month'),
-        db.func.sum(Order.total_amount).label('revenue'),
-        db.func.count(Order.id).label('orders')
-    ).filter(
+    # Fetch orders in range
+    orders = Order.query.filter(
         Order.status != 'cancelled',
         Order.created_at >= start
-    ).group_by('month').order_by('month').all()
+    ).all()
     
-    for r in results:
-        if r.month in data:
-            data[r.month]['revenue'] = float(r.revenue or 0)
-            data[r.month]['orders'] = r.orders
+    for order in orders:
+        key = order.created_at.strftime('%Y-%m') if order.created_at else None
+        if key and key in data:
+            data[key]['revenue'] += float(order.total_amount or 0)
+            data[key]['orders'] += 1
     
     return list(data.values())
 
 
 def get_yearly_revenue():
     """Return revenue grouped by year (all time)"""
-    # FIXED: Count ALL non-cancelled orders
-    results = db.session.query(
-        db.func.strftime('%Y', Order.created_at).label('year'),
-        db.func.sum(Order.total_amount).label('revenue'),
-        db.func.count(Order.id).label('orders')
-    ).filter(
-        Order.status != 'cancelled'
-    ).group_by('year').order_by('year').all()
+    orders = Order.query.filter(Order.status != 'cancelled').all()
     
-    return [
-        {
-            'period': r.year,
-            'label': r.year,
-            'revenue': float(r.revenue or 0),
-            'orders': r.orders
-        }
-        for r in results
-    ]
+    data = {}
+    for order in orders:
+        if not order.created_at:
+            continue
+        key = order.created_at.strftime('%Y')
+        if key not in data:
+            data[key] = {
+                'period': key,
+                'label': key,
+                'revenue': 0.0,
+                'orders': 0
+            }
+        data[key]['revenue'] += float(order.total_amount or 0)
+        data[key]['orders'] += 1
+    
+    return sorted(data.values(), key=lambda x: x['period'])
 
 
 @orders_bp.route('/orders/revenue', methods=['GET', 'OPTIONS'])
