@@ -4,80 +4,195 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Our Projects | Apiaro Contractors</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/responsive.css">
-    <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        :root {
+            --primary: #1a56db; --primary-dark: #1e429f; --secondary: #f59e0b;
+            --accent: #10b981; --dark: #0f172a; --light: #f8fafc; --gray: #64748b;
+            --glass-border: rgba(255,255,255,0.15);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background: var(--light); color: var(--dark); line-height: 1.6; }
+
+        .loader { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.6s, visibility 0.6s; }
+        .loader.hidden { opacity: 0; visibility: hidden; }
+        .loader-spinner { width: 60px; height: 60px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--secondary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(15,23,42,0.9); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); transition: all 0.3s; }
+        .navbar.scrolled { background: rgba(15,23,42,0.98); box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar .container { max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+        .nav-brand { display: flex; flex-direction: column; }
+        .logo-text { font-size: 1.5rem; font-weight: 800; color: white; letter-spacing: 2px; }
+        .nav-brand small { color: var(--secondary); font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        .nav-menu { display: flex; list-style: none; gap: 2rem; align-items: center; }
+        .nav-menu a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.3s; position: relative; }
+        .nav-menu a::after { content: ''; position: absolute; bottom: -6px; left: 0; width: 0; height: 2px; background: var(--secondary); transition: width 0.3s; }
+        .nav-menu a:hover, .nav-menu a.active { color: white; }
+        .nav-menu a:hover::after, .nav-menu a.active::after { width: 100%; }
+        .btn-cart { background: var(--primary); padding: 0.5rem 1rem; border-radius: 50px; display: flex; align-items: center; gap: 0.5rem; }
+        .btn-cart:hover { background: var(--primary-dark) !important; }
+        .btn-cart span { background: var(--secondary); color: var(--dark); font-size: 0.75rem; font-weight: 700; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .nav-toggle { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; }
+        .nav-toggle span { width: 25px; height: 2px; background: white; transition: all 0.3s; }
+
+        .page-header { padding: 10rem 2rem 6rem; background: linear-gradient(135deg, var(--dark) 0%, #1e3a5f 50%, var(--primary-dark) 100%); position: relative; }
+        .page-header::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); opacity: 0.5; }
+        .page-header .container { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+        .page-header h1 { font-size: 3.5rem; font-weight: 800; color: white; margin-bottom: 1rem; }
+        .breadcrumb { display: flex; align-items: center; gap: 0.75rem; color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+        .breadcrumb a { color: var(--secondary); text-decoration: none; }
+        .breadcrumb a:hover { color: white; }
+
+        .section { padding: 5rem 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        .projects-filter { display: flex; gap: 0.75rem; justify-content: center; margin-bottom: 3rem; flex-wrap: wrap; }
+        .filter-btn { padding: 0.75rem 1.5rem; border: 2px solid #e2e8f0; background: white; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600; color: var(--gray); cursor: pointer; transition: all 0.3s; }
+        .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .filter-btn.active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-color: var(--primary); box-shadow: 0 8px 25px rgba(26,86,219,0.3); }
+
+        .projects-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+        .project-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.08); transition: all 0.4s; cursor: pointer; }
+        .project-card:hover { transform: translateY(-10px); box-shadow: 0 25px 60px rgba(0,0,0,0.15); }
+        .project-image { width: 100%; height: 260px; overflow: hidden; position: relative; }
+        .project-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        .project-card:hover .project-image img { transform: scale(1.1); }
+        .project-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(15,23,42,0.8), transparent 60%); display: flex; align-items: flex-end; padding: 1.5rem; opacity: 0; transition: opacity 0.4s; }
+        .project-card:hover .project-overlay { opacity: 1; }
+        .project-overlay span { color: white; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
+        .project-badge { position: absolute; top: 1rem; right: 1rem; background: var(--secondary); color: white; padding: 0.35rem 0.8rem; border-radius: 50px; font-size: 0.75rem; font-weight: 600; }
+        .project-info { padding: 1.5rem; }
+        .project-info h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .project-location { color: var(--gray); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+        .project-status { display: inline-block; padding: 0.35rem 0.9rem; border-radius: 50px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+        .status-completed { background: rgba(16,185,129,0.1); color: #10b981; }
+        .status-ongoing { background: rgba(59,130,246,0.1); color: #3b82f6; }
+        .status-pending { background: rgba(245,158,11,0.1); color: #f59e0b; }
+
+        .skeleton-box { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .cta-section { padding: 6rem 2rem; background: linear-gradient(135deg, var(--dark), #1e3a5f); position: relative; overflow: hidden; }
+        .cta-section::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+        .cta-content { position: relative; z-index: 1; text-align: center; max-width: 700px; margin: 0 auto; }
+        .cta-content h2 { font-size: 2.5rem; font-weight: 800; color: white; margin-bottom: 1rem; }
+        .cta-content p { color: rgba(255,255,255,0.8); font-size: 1.1rem; margin-bottom: 2rem; }
+        .btn-white { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2.5rem; background: white; color: var(--primary); border-radius: 50px; font-weight: 600; text-decoration: none; transition: all 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .btn-white:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); overflow-y: auto; }
+        .modal-content { background: white; max-width: 900px; margin: 3rem auto; border-radius: 24px; overflow: hidden; position: relative; animation: modalIn 0.4s ease; }
+        @keyframes modalIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-close { position: absolute; top: 1.5rem; right: 1.5rem; width: 40px; height: 40px; border-radius: 50%; background: white; border: none; font-size: 1.5rem; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: all 0.3s; }
+        .modal-close:hover { background: #ef4444; color: white; }
+        .modal-body { display: grid; grid-template-columns: 1fr 1fr; }
+        .modal-gallery { height: 400px; overflow: hidden; }
+        .modal-gallery img { width: 100%; height: 100%; object-fit: cover; }
+        .modal-details { padding: 2.5rem; }
+        .modal-details .product-category { display: inline-block; color: var(--primary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+        .modal-details h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 1rem; }
+        .modal-details .project-description { color: var(--gray); line-height: 1.8; margin-bottom: 1.5rem; }
+        .project-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+        .meta-item { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; color: var(--gray); }
+        .meta-item i { color: var(--primary); width: 20px; }
+
+        .footer { background: var(--dark); color: white; padding: 4rem 2rem 2rem; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1.5fr 1.5fr; gap: 3rem; margin-bottom: 3rem; }
+        .footer-brand h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: var(--secondary); }
+        .footer-brand p { color: rgba(255,255,255,0.7); line-height: 1.8; margin-bottom: 1.5rem; }
+        .social-links { display: flex; gap: 1rem; }
+        .social-links a { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; transition: all 0.3s; }
+        .social-links a:hover { background: var(--secondary); transform: translateY(-3px); }
+        .footer-links h4, .footer-services h4, .footer-contact h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; }
+        .footer-links ul, .footer-services ul { list-style: none; }
+        .footer-links li, .footer-services li { margin-bottom: 0.75rem; }
+        .footer-links a, .footer-services a { color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.3s; display: inline-block; }
+        .footer-links a:hover, .footer-services a:hover { color: var(--secondary); transform: translateX(5px); }
+        .footer-contact p { color: rgba(255,255,255,0.7); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+        .footer-contact i { color: var(--secondary); width: 20px; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .admin-link a { color: rgba(255,255,255,0.5); text-decoration: none; transition: color 0.3s; }
+        .admin-link a:hover { color: var(--secondary); }
+
+        .animate-on-scroll { opacity: 0; transform: translateY(40px); transition: opacity 0.8s, transform 0.8s; }
+        .animate-on-scroll.visible { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 1024px) { .projects-grid { grid-template-columns: repeat(2, 1fr); } .modal-body { grid-template-columns: 1fr; } .modal-gallery { height: 250px; } .footer-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) {
+            .nav-toggle { display: flex; }
+            .nav-menu { position: fixed; top: 80px; left: 0; right: 0; background: var(--dark); flex-direction: column; padding: 2rem; gap: 1.5rem; transform: translateY(-150%); transition: transform 0.4s; }
+            .nav-menu.active { transform: translateY(0); }
+            .page-header h1 { font-size: 2.5rem; }
+            .projects-grid { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+            .footer-bottom { flex-direction: column; text-align: center; }
+        }
+    </style>
+<base target="_blank">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
+    <div id="loader" class="loader"><div class="loader-content"><div class="loader-spinner"></div><p style="color:white;font-weight:700;letter-spacing:4px;">APIARO..</p></div></div>
+
+    <nav class="navbar" id="navbar">
         <div class="container">
-            <a href="index.html" class="nav-brand">
+            <div class="nav-brand">
                 <span class="logo-text">APIARO</span>
-                <small>General Contractors</small>
-            </a>
+                <small>Contractors & Supplies Limited</small>
+            </div>
+            <button class="nav-toggle" id="navToggle"><span></span><span></span><span></span></button>
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="about.html">About</a></li>
+                <li><a href="about.html">About Us</a></li>
                 <li><a href="services.html">Services</a></li>
                 <li><a href="projects.html" class="active">Projects</a></li>
                 <li><a href="products.html">Products</a></li>
                 <li><a href="contact.html">Contact</a></li>
+                <li><a href="cart.html" class="btn-cart"><i class="fas fa-shopping-cart"></i> <span id="cartCount">0</span></a></li>
             </ul>
-            <button class="nav-toggle" id="navToggle">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
         </div>
     </nav>
 
-    <!-- Page Header -->
-    <header class="page-header">
+    <section class="page-header">
         <div class="container">
             <h1>Our Projects</h1>
-            <div class="breadcrumb">
+            <nav class="breadcrumb">
                 <a href="index.html">Home</a>
-                <i class="fas fa-chevron-right"></i>
+                <span>/</span>
                 <span>Projects</span>
-            </div>
+            </nav>
         </div>
-    </header>
+    </section>
 
-    <!-- Projects Section -->
     <section class="section">
         <div class="container">
-            <!-- Filter Buttons -->
             <div class="projects-filter">
                 <button class="filter-btn active" data-filter="all">All Projects</button>
                 <button class="filter-btn" data-filter="building">Building</button>
                 <button class="filter-btn" data-filter="road">Road Works</button>
-                <button class="filter-btn" data-filter="renovation">Water works</button>
+                <button class="filter-btn" data-filter="renovation">Water Works</button>
             </div>
-
-            <!-- Projects Grid -->
             <div id="projects-container" class="projects-grid">
-                <!-- Projects will be loaded here -->
-                <div class="skeleton-box" style="height: 300px; border-radius: 12px;"></div>
-                <div class="skeleton-box" style="height: 300px; border-radius: 12px;"></div>
-                <div class="skeleton-box" style="height: 300px; border-radius: 12px;"></div>
+                <div class="skeleton-box" style="height:300px;border-radius:20px;"></div>
+                <div class="skeleton-box" style="height:300px;border-radius:20px;"></div>
+                <div class="skeleton-box" style="height:300px;border-radius:20px;"></div>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section -->
     <section class="cta-section">
         <div class="container">
             <div class="cta-content">
                 <h2>Have a Project in Mind?</h2>
                 <p>Let's discuss how we can help bring your construction vision to life.</p>
-                <a href="contact.html" class="btn btn-white">Get a Quote</a>
+                <a href="contact.html" class="btn btn-white">Get a Quote <i class="fas fa-arrow-right"></i></a>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">
@@ -85,10 +200,10 @@
                     <h3>APIARO</h3>
                     <p>Building Tomorrow's Infrastructure Today. Quality construction services across Kenya.</p>
                     <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                     </div>
                 </div>
                 <div class="footer-links">
@@ -103,10 +218,10 @@
                 <div class="footer-services">
                     <h4>Services</h4>
                     <ul>
-                        <li><a href="#">Building Construction</a></li>
-                        <li><a href="#">Road Works</a></li>
-                        <li><a href="#">Renovation</a></li>
-                        <li><a href="#">Supply Management</a></li>
+                        <li><a href="services.html">Building Construction</a></li>
+                        <li><a href="services.html">Road Works</a></li>
+                        <li><a href="services.html">Renovation</a></li>
+                        <li><a href="services.html">Supply Management</a></li>
                     </ul>
                 </div>
                 <div class="footer-contact">
@@ -118,42 +233,27 @@
             </div>
             <div class="footer-bottom">
                 <p>&copy; 2026 Apiaro Contractors and Supplies Limited. All rights reserved.</p>
-                <div class="admin-link">
-                    <a href="http://localhost:3001/login.html"><i class="fas fa-lock"></i> Admin</a>
-                </div>
+                <div class="admin-link"><a href="http://localhost:3001/login.html"><i class="fas fa-lock"></i> Admin</a></div>
             </div>
         </div>
     </footer>
 
-    <!-- Project Detail Modal -->
     <div id="projectModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeModal()">&times;</span>
             <div class="modal-body">
                 <div class="modal-gallery">
-                    <img id="modalImage" src="" alt="" class="modal-main-image">
+                    <img id="modalImage" src="" alt="">
                 </div>
                 <div class="modal-details">
                     <span id="modalCategory" class="product-category"></span>
                     <h2 id="modalTitle"></h2>
                     <p id="modalDescription" class="project-description"></p>
                     <div class="project-meta">
-                        <div class="meta-item">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span id="modalLocation"></span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="fas fa-calendar"></i>
-                            <span id="modalDate"></span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="fas fa-user"></i>
-                            <span id="modalClient"></span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="fas fa-money-bill"></i>
-                            <span id="modalBudget"></span>
-                        </div>
+                        <div class="meta-item"><i class="fas fa-map-marker-alt"></i><span id="modalLocation"></span></div>
+                        <div class="meta-item"><i class="fas fa-calendar"></i><span id="modalDate"></span></div>
+                        <div class="meta-item"><i class="fas fa-user"></i><span id="modalClient"></span></div>
+                        <div class="meta-item"><i class="fas fa-money-bill"></i><span id="modalBudget"></span></div>
                     </div>
                     <span id="modalStatus" class="project-status"></span>
                 </div>
@@ -162,80 +262,59 @@
     </div>
 
     <script src="js/api.js"></script>
+    <script src="js/cart.js"></script>
     <script>
-        // Mobile Navigation Toggle
-        const navToggle = document.getElementById('navToggle');
-        const navMenu = document.getElementById('navMenu');
-        
-        navToggle.addEventListener('click', () => {
-            navMenu.classList.toggle('active');
-            navToggle.classList.toggle('active');
-        });
+        window.addEventListener('load', () => { setTimeout(() => document.getElementById('loader').classList.add('hidden'), 800); });
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => { navbar.classList.toggle('scrolled', window.scrollY > 50); });
+        document.getElementById('navToggle').addEventListener('click', () => { document.getElementById('navMenu').classList.toggle('active'); });
 
-        // Filter functionality
+        const observer = new IntersectionObserver((entries) => { entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+
         const filterBtns = document.querySelectorAll('.filter-btn');
         let allProjects = [];
-
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 filterBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                
                 const filter = btn.dataset.filter;
-                const filtered = filter === 'all' 
-                    ? allProjects 
-                    : allProjects.filter(p => p.category === filter);
+                const filtered = filter === 'all' ? allProjects : allProjects.filter(p => p.category === filter);
                 displayProjects(filtered);
             });
         });
 
         async function loadProjects() {
             const container = document.getElementById('projects-container');
-            
             try {
                 const projects = await api.getProjects();
                 allProjects = projects;
-                
-                if (projects.length === 0) {
-                    container.innerHTML = '<p class="text-center">No projects found.</p>';
-                    return;
-                }
-                
+                if (projects.length === 0) { container.innerHTML = '<p style="text-align:center;padding:3rem;color:var(--gray);">No projects found.</p>'; return; }
                 displayProjects(projects);
-                
-            } catch (error) {
-                console.error('Error loading projects:', error);
-                container.innerHTML = '<p class="text-center error">Error loading projects. Please try again later.</p>';
-            }
+            } catch (error) { container.innerHTML = '<p style="text-align:center;padding:3rem;color:#ef4444;">Error loading projects. Please try again later.</p>'; }
         }
 
         function displayProjects(projects) {
             const container = document.getElementById('projects-container');
-            
             container.innerHTML = projects.map(project => `
-                <div class="project-card" onclick="openModal(${project.id})">
+                <div class="project-card animate-on-scroll" onclick="openModal(${project.id})">
                     <div class="project-image">
                         <img src="${project.image_url}" alt="${project.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
-                        <div class="project-overlay">
-                            <span class="view-project">View Details</span>
-                        </div>
+                        <div class="project-overlay"><span>View Details <i class="fas fa-arrow-right"></i></span></div>
                         ${project.featured ? '<span class="project-badge">Featured</span>' : ''}
                     </div>
                     <div class="project-info">
                         <h3>${project.title}</h3>
-                        <p class="project-location">
-                            <i class="fas fa-map-marker-alt"></i> ${project.location || 'Location not specified'}
-                        </p>
+                        <p class="project-location"><i class="fas fa-map-marker-alt"></i> ${project.location || 'Location not specified'}</p>
                         <span class="project-status status-${project.status}">${project.status}</span>
                     </div>
                 </div>
             `).join('');
+            document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
         }
 
         function openModal(projectId) {
             const project = allProjects.find(p => p.id === projectId);
             if (!project) return;
-            
             document.getElementById('modalImage').src = project.image_url;
             document.getElementById('modalCategory').textContent = project.category;
             document.getElementById('modalTitle').textContent = project.title;
@@ -244,29 +323,13 @@
             document.getElementById('modalDate').textContent = `${project.start_date || 'N/A'} - ${project.end_date || 'N/A'}`;
             document.getElementById('modalClient').textContent = project.client_name || 'Not specified';
             document.getElementById('modalBudget').textContent = project.budget ? `KES ${parseFloat(project.budget).toLocaleString()}` : 'Not disclosed';
-            
             const statusEl = document.getElementById('modalStatus');
-            statusEl.textContent = project.status;
-            statusEl.className = `project-status status-${project.status}`;
-            
+            statusEl.textContent = project.status; statusEl.className = `project-status status-${project.status}`;
             document.getElementById('projectModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
-
-        function closeModal() {
-            document.getElementById('projectModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-
-        // Close modal on outside click
-        window.onclick = function(event) {
-            const modal = document.getElementById('projectModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        }
-
-        // Load projects when page loads
+        function closeModal() { document.getElementById('projectModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+        window.onclick = function(event) { if (event.target === document.getElementById('projectModal')) closeModal(); }
         document.addEventListener('DOMContentLoaded', loadProjects);
     </script>
 </body>

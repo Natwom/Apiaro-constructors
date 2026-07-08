@@ -5,13 +5,108 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Professional construction services including building construction, road works, renovation, and material supplies">
     <title>Our Services | Apiaro Contractors</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/responsive.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        :root {
+            --primary: #1a56db; --primary-dark: #1e429f; --secondary: #f59e0b;
+            --accent: #10b981; --dark: #0f172a; --light: #f8fafc; --gray: #64748b;
+            --glass-border: rgba(255,255,255,0.15);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background: var(--light); color: var(--dark); line-height: 1.6; }
+
+        .loader { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.6s, visibility 0.6s; }
+        .loader.hidden { opacity: 0; visibility: hidden; }
+        .loader-spinner { width: 60px; height: 60px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--secondary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(15,23,42,0.9); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); transition: all 0.3s; }
+        .navbar.scrolled { background: rgba(15,23,42,0.98); box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar .container { max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+        .nav-brand { display: flex; flex-direction: column; }
+        .logo-text { font-size: 1.5rem; font-weight: 800; color: white; letter-spacing: 2px; }
+        .nav-brand small { color: var(--secondary); font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        .nav-menu { display: flex; list-style: none; gap: 2rem; align-items: center; }
+        .nav-menu a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.3s; position: relative; }
+        .nav-menu a::after { content: ''; position: absolute; bottom: -6px; left: 0; width: 0; height: 2px; background: var(--secondary); transition: width 0.3s; }
+        .nav-menu a:hover, .nav-menu a.active { color: white; }
+        .nav-menu a:hover::after, .nav-menu a.active::after { width: 100%; }
+        .btn-cart { background: var(--primary); padding: 0.5rem 1rem; border-radius: 50px; display: flex; align-items: center; gap: 0.5rem; }
+        .btn-cart:hover { background: var(--primary-dark) !important; }
+        .btn-cart span { background: var(--secondary); color: var(--dark); font-size: 0.75rem; font-weight: 700; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .nav-toggle { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; }
+        .nav-toggle span { width: 25px; height: 2px; background: white; transition: all 0.3s; }
+
+        .page-header { padding: 10rem 2rem 6rem; background: linear-gradient(135deg, var(--dark) 0%, #1e3a5f 50%, var(--primary-dark) 100%); position: relative; }
+        .page-header::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); opacity: 0.5; }
+        .page-header .container { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+        .page-header h1 { font-size: 3.5rem; font-weight: 800; color: white; margin-bottom: 1rem; }
+        .breadcrumb { display: flex; align-items: center; gap: 0.75rem; color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+        .breadcrumb a { color: var(--secondary); text-decoration: none; }
+        .breadcrumb a:hover { color: white; }
+
+        .section { padding: 5rem 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        .service-detail-item { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; margin-bottom: 6rem; }
+        .service-detail-item.reverse { direction: rtl; }
+        .service-detail-item.reverse > * { direction: ltr; }
+        .service-detail-item:last-child { margin-bottom: 0; }
+        .service-detail-image { border-radius: 24px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.15); position: relative; }
+        .service-detail-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(45deg, rgba(26,86,219,0.15), rgba(245,158,11,0.15)); }
+        .service-detail-image img { width: 100%; height: 400px; object-fit: cover; display: block; transition: transform 0.5s; }
+        .service-detail-image:hover img { transform: scale(1.05); }
+        .service-detail-content { padding: 1rem 0; }
+        .service-icon-large { width: 70px; height: 70px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: white; margin-bottom: 1.5rem; box-shadow: 0 10px 30px rgba(26,86,219,0.3); }
+        .service-detail-content h2 { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; color: var(--dark); }
+        .service-detail-content > p { color: var(--gray); line-height: 1.8; margin-bottom: 1.5rem; }
+        .service-features { list-style: none; margin-bottom: 2rem; }
+        .service-features li { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; color: var(--dark); font-weight: 500; }
+        .service-features li i { width: 24px; height: 24px; background: rgba(16,185,129,0.1); color: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; }
+        .btn-primary { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-radius: 12px; font-weight: 600; text-decoration: none; transition: all 0.3s; border: none; cursor: pointer; }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(26,86,219,0.3); }
+
+        .cta-section { padding: 6rem 2rem; background: linear-gradient(135deg, var(--dark), #1e3a5f); position: relative; overflow: hidden; }
+        .cta-section::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+        .cta-content { position: relative; z-index: 1; text-align: center; max-width: 700px; margin: 0 auto; }
+        .cta-content h2 { font-size: 2.5rem; font-weight: 800; color: white; margin-bottom: 1rem; }
+        .cta-content p { color: rgba(255,255,255,0.8); font-size: 1.1rem; margin-bottom: 2rem; }
+        .btn-white { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2.5rem; background: white; color: var(--primary); border-radius: 50px; font-weight: 600; text-decoration: none; transition: all 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .btn-white:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+
+        .footer { background: var(--dark); color: white; padding: 4rem 2rem 2rem; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1.5fr; gap: 3rem; margin-bottom: 3rem; }
+        .footer-brand h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: var(--secondary); }
+        .footer-brand p { color: rgba(255,255,255,0.7); line-height: 1.8; }
+        .footer-links h4, .footer-contact h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; }
+        .footer-links ul { list-style: none; }
+        .footer-links li { margin-bottom: 0.75rem; }
+        .footer-links a { color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.3s; display: inline-block; }
+        .footer-links a:hover { color: var(--secondary); transform: translateX(5px); }
+        .footer-contact p { color: rgba(255,255,255,0.7); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+        .footer-contact i { color: var(--secondary); width: 20px; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.9rem; }
+
+        .animate-on-scroll { opacity: 0; transform: translateY(40px); transition: opacity 0.8s, transform 0.8s; }
+        .animate-on-scroll.visible { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 1024px) { .service-detail-item { grid-template-columns: 1fr; gap: 2rem; } .service-detail-item.reverse { direction: ltr; } .service-detail-image img { height: 300px; } }
+        @media (max-width: 768px) {
+            .nav-toggle { display: flex; }
+            .nav-menu { position: fixed; top: 80px; left: 0; right: 0; background: var(--dark); flex-direction: column; padding: 2rem; gap: 1.5rem; transform: translateY(-150%); transition: transform 0.4s; }
+            .nav-menu.active { transform: translateY(0); }
+            .page-header h1 { font-size: 2.5rem; }
+            .service-detail-content h2 { font-size: 1.6rem; }
+            .cta-content h2 { font-size: 1.8rem; }
+            .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+        }
+    </style>
+<base target="_blank">
 </head>
 <body>
-    <div id="loader" class="loader"><div class="loader-content"><div class="loader-spinner"></div><p>APIARO..</p></div></div>
+    <div id="loader" class="loader"><div class="loader-content"><div class="loader-spinner"></div><p style="color:white;font-weight:700;letter-spacing:4px;">APIARO..</p></div></div>
 
     <nav class="navbar" id="navbar">
         <div class="container">
@@ -43,17 +138,14 @@
         </div>
     </section>
 
-    <section class="section services-detail">
+    <section class="section">
         <div class="container">
-            <!-- Building Construction -->
             <div class="service-detail-item animate-on-scroll">
                 <div class="service-detail-image">
                     <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800" alt="Building Construction">
                 </div>
                 <div class="service-detail-content">
-                    <div class="service-icon-large">
-                        <i class="fas fa-building"></i>
-                    </div>
+                    <div class="service-icon-large"><i class="fas fa-building"></i></div>
                     <h2>Building Construction</h2>
                     <p>We specialize in constructing high-quality residential, commercial, and industrial buildings. From foundation to finishing, our expert team ensures every detail meets the highest standards.</p>
                     <ul class="service-features">
@@ -63,19 +155,16 @@
                         <li><i class="fas fa-check"></i> Institutional buildings (schools, hospitals)</li>
                         <li><i class="fas fa-check"></i> Shopping malls and retail centers</li>
                     </ul>
-                    <a href="contact.html" class="btn btn-primary">Get a Quote</a>
+                    <a href="contact.html" class="btn-primary">Get a Quote <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
 
-            <!-- Road Works -->
             <div class="service-detail-item reverse animate-on-scroll">
                 <div class="service-detail-image">
                     <img src="https://images.unsplash.com/photo-1590644365607-1c5a38fc43e0?w=800" alt="Road Construction">
                 </div>
                 <div class="service-detail-content">
-                    <div class="service-icon-large">
-                        <i class="fas fa-road"></i>
-                    </div>
+                    <div class="service-icon-large"><i class="fas fa-road"></i></div>
                     <h2>Road Works</h2>
                     <p>Our road construction division handles everything from highways to local access roads. We use modern equipment and techniques to deliver durable, safe road infrastructure.</p>
                     <ul class="service-features">
@@ -85,19 +174,16 @@
                         <li><i class="fas fa-check"></i> Bridge and culvert construction</li>
                         <li><i class="fas fa-check"></i> Road marking and signage</li>
                     </ul>
-                    <a href="contact.html" class="btn btn-primary">Get a Quote</a>
+                    <a href="contact.html" class="btn-primary">Get a Quote <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
 
-            <!-- Renovation -->
             <div class="service-detail-item animate-on-scroll">
                 <div class="service-detail-image">
                     <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800" alt="Renovation">
                 </div>
                 <div class="service-detail-content">
-                    <div class="service-icon-large">
-                        <i class="fas fa-hammer"></i>
-                    </div>
+                    <div class="service-icon-large"><i class="fas fa-hammer"></i></div>
                     <h2>Renovation & Remodeling</h2>
                     <p>Transform your existing spaces with our professional renovation services. Whether it's a home makeover or commercial space upgrade, we breathe new life into old structures.</p>
                     <ul class="service-features">
@@ -107,19 +193,16 @@
                         <li><i class="fas fa-check"></i> Structural modifications</li>
                         <li><i class="fas fa-check"></i> Historic building restoration</li>
                     </ul>
-                    <a href="contact.html" class="btn btn-primary">Get a Quote</a>
+                    <a href="contact.html" class="btn-primary">Get a Quote <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
 
-            <!-- Material Supplies -->
             <div class="service-detail-item reverse animate-on-scroll">
                 <div class="service-detail-image">
                     <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800" alt="Construction Materials">
                 </div>
                 <div class="service-detail-content">
-                    <div class="service-icon-large">
-                        <i class="fas fa-truck"></i>
-                    </div>
+                    <div class="service-icon-large"><i class="fas fa-truck"></i></div>
                     <h2>Construction Material Supplies</h2>
                     <p>We supply premium quality construction materials at competitive prices. Our extensive inventory ensures you get what you need, when you need it.</p>
                     <ul class="service-features">
@@ -129,19 +212,16 @@
                         <li><i class="fas fa-check"></i> Roofing materials</li>
                         <li><i class="fas fa-check"></i> Plumbing and electrical supplies</li>
                     </ul>
-                    <a href="products.html" class="btn btn-primary">View Products</a>
+                    <a href="products.html" class="btn-primary">View Products <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
 
-            <!-- Equipment Hire -->
             <div class="service-detail-item animate-on-scroll">
                 <div class="service-detail-image">
                     <img src="https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=800" alt="Equipment Hire">
                 </div>
                 <div class="service-detail-content">
-                    <div class="service-icon-large">
-                        <i class="fas fa-tools"></i>
-                    </div>
+                    <div class="service-icon-large"><i class="fas fa-tools"></i></div>
                     <h2>Equipment Hire</h2>
                     <p>Access modern construction equipment without the capital investment. Our well-maintained fleet is available for short and long-term hire with trained operators.</p>
                     <ul class="service-features">
@@ -151,7 +231,7 @@
                         <li><i class="fas fa-check"></i> Compactors and rollers</li>
                         <li><i class="fas fa-check"></i> Generators and power tools</li>
                     </ul>
-                    <a href="contact.html" class="btn btn-primary">Hire Equipment</a>
+                    <a href="contact.html" class="btn-primary">Hire Equipment <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
         </div>
@@ -162,7 +242,7 @@
             <div class="cta-content">
                 <h2>Need a Custom Solution?</h2>
                 <p>Contact us to discuss your specific project requirements</p>
-                <a href="contact.html" class="btn btn-white">Contact Us</a>
+                <a href="contact.html" class="btn-white">Contact Us <i class="fas fa-arrow-right"></i></a>
             </div>
         </div>
     </section>
@@ -172,7 +252,7 @@
             <div class="footer-grid">
                 <div class="footer-brand">
                     <h3>APIARO CONTRACTORS</h3>
-                    <p>Building quality infrastructure since 2010.</p>
+                    <p>Building quality infrastructure since 2015.</p>
                 </div>
                 <div class="footer-links">
                     <h4>Quick Links</h4>
@@ -186,7 +266,7 @@
                 <div class="footer-contact">
                     <h4>Contact</h4>
                     <p><i class="fas fa-map-marker-alt"></i> Lodwar, Kenya</p>
-                    <p><i class="fas fa-phone"></i> +256 710 232 335</p>
+                    <p><i class="fas fa-phone"></i> +254 710 232 335</p>
                 </div>
             </div>
             <div class="footer-bottom">
@@ -197,6 +277,14 @@
 
     <script src="js/api.js"></script>
     <script src="js/cart.js"></script>
-    <script src="js/main.js"></script>
+    <script>
+        window.addEventListener('load', () => { setTimeout(() => document.getElementById('loader').classList.add('hidden'), 800); });
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => { navbar.classList.toggle('scrolled', window.scrollY > 50); });
+        document.getElementById('navToggle').addEventListener('click', () => { document.getElementById('navMenu').classList.toggle('active'); });
+
+        const observer = new IntersectionObserver((entries) => { entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+        document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+    </script>
 </body>
 </html>

@@ -3,15 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Shop quality construction materials - cement, steel, timber, roofing, and more at Apiaro Constructors">
-    <title>Construction Materials | Apiaro Constructors</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/responsive.css">
+    <meta name="description" content="Shop quality construction materials - cement, steel, timber, roofing, and more at Apiaro Contractors">
+    <title>Construction Materials | Apiaro Contractors</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        :root {
+            --primary: #1a56db; --primary-dark: #1e429f; --secondary: #f59e0b;
+            --accent: #10b981; --dark: #0f172a; --light: #f8fafc; --gray: #64748b;
+            --glass-border: rgba(255,255,255,0.15);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background: var(--light); color: var(--dark); line-height: 1.6; }
+
+        .loader { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.6s, visibility 0.6s; }
+        .loader.hidden { opacity: 0; visibility: hidden; }
+        .loader-spinner { width: 60px; height: 60px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--secondary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(15,23,42,0.9); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); transition: all 0.3s; }
+        .navbar.scrolled { background: rgba(15,23,42,0.98); box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar .container { max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+        .nav-brand { display: flex; flex-direction: column; }
+        .logo-text { font-size: 1.5rem; font-weight: 800; color: white; letter-spacing: 2px; }
+        .nav-brand small { color: var(--secondary); font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        .nav-menu { display: flex; list-style: none; gap: 2rem; align-items: center; }
+        .nav-menu a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.3s; position: relative; }
+        .nav-menu a::after { content: ''; position: absolute; bottom: -6px; left: 0; width: 0; height: 2px; background: var(--secondary); transition: width 0.3s; }
+        .nav-menu a:hover, .nav-menu a.active { color: white; }
+        .nav-menu a:hover::after, .nav-menu a.active::after { width: 100%; }
+        .btn-cart { background: var(--primary); padding: 0.5rem 1rem; border-radius: 50px; display: flex; align-items: center; gap: 0.5rem; }
+        .btn-cart:hover { background: var(--primary-dark) !important; }
+        .btn-cart span { background: var(--secondary); color: var(--dark); font-size: 0.75rem; font-weight: 700; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .nav-toggle { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; }
+        .nav-toggle span { width: 25px; height: 2px; background: white; transition: all 0.3s; }
+
+        .page-header { padding: 10rem 2rem 6rem; background: linear-gradient(135deg, var(--dark) 0%, #1e3a5f 50%, var(--primary-dark) 100%); position: relative; }
+        .page-header::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); opacity: 0.5; }
+        .page-header .container { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+        .page-header h1 { font-size: 3.5rem; font-weight: 800; color: white; margin-bottom: 1rem; }
+        .breadcrumb { display: flex; align-items: center; gap: 0.75rem; color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+        .breadcrumb a { color: var(--secondary); text-decoration: none; }
+        .breadcrumb a:hover { color: white; }
+
+        .section { padding: 5rem 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        .products-layout { display: grid; grid-template-columns: 260px 1fr; gap: 2.5rem; }
+        .products-sidebar { position: sticky; top: 100px; height: fit-content; }
+        .filter-widget { background: white; padding: 1.5rem; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+        .filter-widget h4 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--dark); }
+        .search-box { display: flex; gap: 0.5rem; }
+        .search-box input { flex: 1; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem; transition: all 0.3s; background: #f8fafc; }
+        .search-box input:focus { outline: none; border-color: var(--primary); background: white; }
+        .search-box button { width: 44px; height: 44px; border-radius: 10px; background: var(--primary); color: white; border: none; cursor: pointer; transition: all 0.3s; }
+        .search-box button:hover { background: var(--primary-dark); }
+        .category-list { list-style: none; }
+        .category-list li { margin-bottom: 0.5rem; }
+        .category-btn { width: 100%; text-align: left; padding: 0.75rem 1rem; border: none; background: transparent; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500; color: var(--gray); cursor: pointer; transition: all 0.3s; }
+        .category-btn:hover { background: #f1f5f9; color: var(--dark); }
+        .category-btn.active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+
+        .products-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .products-header p { color: var(--gray); font-size: 0.95rem; }
+        .products-header select { padding: 0.6rem 1rem; border: 2px solid #e2e8f0; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem; background: white; cursor: pointer; }
+        .products-header select:focus { outline: none; border-color: var(--primary); }
+
+        .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        .product-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.06); transition: all 0.4s; border: 1px solid rgba(0,0,0,0.04); }
+        .product-card:hover { transform: translateY(-10px); box-shadow: 0 20px 50px rgba(0,0,0,0.12); }
+        .product-image { width: 100%; height: 220px; overflow: hidden; position: relative; }
+        .product-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        .product-card:hover .product-image img { transform: scale(1.1); }
+        .product-badge { position: absolute; top: 1rem; left: 1rem; background: var(--secondary); color: white; padding: 0.35rem 0.8rem; border-radius: 50px; font-size: 0.75rem; font-weight: 600; }
+        .product-info { padding: 1.5rem; }
+        .product-category { display: inline-block; color: var(--primary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+        .product-info h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--dark); }
+        .product-description { color: var(--gray); font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid #f1f5f9; }
+        .product-price { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
+        .product-price small { font-size: 0.8rem; font-weight: 500; color: var(--gray); }
+        .btn-add-cart { padding: 0.6rem 1.2rem; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 0.4rem; }
+        .btn-add-cart:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(26,86,219,0.3); }
+
+        .skeleton { opacity: 0.6; }
+        .skeleton-box { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; }
+        .skeleton-line { height: 16px; background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; margin-bottom: 0.5rem; }
+        .skeleton-line.short { width: 60%; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .footer { background: var(--dark); color: white; padding: 4rem 2rem 2rem; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1.5fr; gap: 3rem; margin-bottom: 3rem; }
+        .footer-brand h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: var(--secondary); }
+        .footer-brand p { color: rgba(255,255,255,0.7); line-height: 1.8; }
+        .footer-links h4, .footer-contact h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; }
+        .footer-links ul { list-style: none; }
+        .footer-links li { margin-bottom: 0.75rem; }
+        .footer-links a { color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.3s; display: inline-block; }
+        .footer-links a:hover { color: var(--secondary); transform: translateX(5px); }
+        .footer-contact p { color: rgba(255,255,255,0.7); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+        .footer-contact i { color: var(--secondary); width: 20px; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.9rem; }
+
+        .animate-on-scroll { opacity: 0; transform: translateY(40px); transition: opacity 0.8s, transform 0.8s; }
+        .animate-on-scroll.visible { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 1024px) { .products-layout { grid-template-columns: 1fr; } .products-sidebar { position: static; } .products-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) {
+            .nav-toggle { display: flex; }
+            .nav-menu { position: fixed; top: 80px; left: 0; right: 0; background: var(--dark); flex-direction: column; padding: 2rem; gap: 1.5rem; transform: translateY(-150%); transition: transform 0.4s; }
+            .nav-menu.active { transform: translateY(0); }
+            .page-header h1 { font-size: 2.5rem; }
+            .products-grid { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+        }
+    </style>
+<base target="_blank">
 </head>
 <body>
-    <div id="loader" class="loader"><div class="loader-content"><div class="loader-spinner"></div><p>APIARO..</p></div></div>
+    <div id="loader" class="loader"><div class="loader-content"><div class="loader-spinner"></div><p style="color:white;font-weight:700;letter-spacing:4px;">APIARO..</p></div></div>
 
     <nav class="navbar" id="navbar">
         <div class="container">
@@ -43,7 +154,7 @@
         </div>
     </section>
 
-    <section class="section products-section">
+    <section class="section">
         <div class="container">
             <div class="products-layout">
                 <aside class="products-sidebar">
@@ -54,7 +165,6 @@
                             <button onclick="searchProducts()"><i class="fas fa-search"></i></button>
                         </div>
                     </div>
-                    
                     <div class="filter-widget">
                         <h4>Categories</h4>
                         <ul class="category-list">
@@ -79,10 +189,23 @@
                             <option value="price-high">Price: High to Low</option>
                         </select>
                     </div>
-                    
                     <div class="products-grid" id="productsContainer">
                         <div class="product-card skeleton">
-                            <div class="product-image skeleton-box"></div>
+                            <div class="product-image skeleton-box" style="height:220px;"></div>
+                            <div class="product-info">
+                                <div class="skeleton-line"></div>
+                                <div class="skeleton-line short"></div>
+                            </div>
+                        </div>
+                        <div class="product-card skeleton">
+                            <div class="product-image skeleton-box" style="height:220px;"></div>
+                            <div class="product-info">
+                                <div class="skeleton-line"></div>
+                                <div class="skeleton-line short"></div>
+                            </div>
+                        </div>
+                        <div class="product-card skeleton">
+                            <div class="product-image skeleton-box" style="height:220px;"></div>
                             <div class="product-info">
                                 <div class="skeleton-line"></div>
                                 <div class="skeleton-line short"></div>
@@ -124,40 +247,28 @@
 
     <script src="js/api.js"></script>
     <script src="js/cart.js"></script>
-    <script src="js/main.js"></script>
     <script>
-        let allProducts = [];
-        let currentCategory = 'all';
+        window.addEventListener('load', () => { setTimeout(() => document.getElementById('loader').classList.add('hidden'), 800); });
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => { navbar.classList.toggle('scrolled', window.scrollY > 50); });
+        document.getElementById('navToggle').addEventListener('click', () => { document.getElementById('navMenu').classList.toggle('active'); });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            loadProducts();
-            setupCategoryFilters();
-            updateCartUI();
-        });
+        const observer = new IntersectionObserver((entries) => { entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+
+        let allProducts = []; let currentCategory = 'all';
+        document.addEventListener('DOMContentLoaded', function() { loadProducts(); setupCategoryFilters(); updateCartUI(); });
 
         async function loadProducts() {
-            try {
-                allProducts = await api.getProducts();
-                displayProducts(allProducts);
-            } catch (error) {
-                console.error('Error loading products:', error);
-                document.getElementById('productsContainer').innerHTML = 
-                    '<p class="text-center error">Failed to load products. Please try again later.</p>';
-            }
+            try { allProducts = await api.getProducts(); displayProducts(allProducts); }
+            catch (error) { document.getElementById('productsContainer').innerHTML = '<p style="text-align:center;color:#ef4444;">Failed to load products. Please try again later.</p>'; }
         }
 
         function displayProducts(products) {
             const container = document.getElementById('productsContainer');
             document.getElementById('resultsCount').textContent = `Showing ${products.length} products`;
-            
-            if (products.length === 0) {
-                container.innerHTML = '<p class="text-center">No products found.</p>';
-                return;
-            }
-
+            if (products.length === 0) { container.innerHTML = '<p style="text-align:center;padding:3rem;color:var(--gray);">No products found.</p>'; return; }
             container.innerHTML = products.map(product => {
                 const rawImagePath = product.images && product.images.length > 0 ? product.images[0] : '';
-                
                 return `
                 <div class="product-card animate-on-scroll" data-category="${product.category}">
                     <div class="product-image">
@@ -169,65 +280,41 @@
                         <h3>${product.name}</h3>
                         <p class="product-description">${product.description || ''}</p>
                         <div class="product-footer">
-                            <span class="product-price">Ksh ${parseFloat(product.price).toLocaleString()}<<small>/${product.unit || 'unit'}</small></span>
-                            <button class="btn btn-add-cart" onclick="addToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price}, '${rawImagePath}')">
+                            <span class="product-price">Ksh ${parseFloat(product.price).toLocaleString()}<small>/${product.unit || 'unit'}</small></span>
+                            <button class="btn-add-cart" onclick="addToCart(${product.id}, '${product.name.replace(/'/g, "\'")}', ${product.price}, '${rawImagePath}')">
                                 <i class="fas fa-cart-plus"></i> Add
                             </button>
                         </div>
                     </div>
                 </div>
             `}).join('');
-            
-            if (typeof initScrollAnimations === 'function') initScrollAnimations();
+            document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
         }
 
         function setupCategoryFilters() {
-            const categoryBtns = document.querySelectorAll('.category-btn');
-            categoryBtns.forEach(btn => {
+            document.querySelectorAll('.category-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    categoryBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    currentCategory = this.getAttribute('data-category');
-                    filterProducts();
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active'); currentCategory = this.getAttribute('data-category'); filterProducts();
                 });
             });
         }
-
         function filterProducts() {
             let filtered = allProducts;
-            if (currentCategory !== 'all') {
-                filtered = filtered.filter(p => p.category === currentCategory);
-            }
+            if (currentCategory !== 'all') filtered = filtered.filter(p => p.category === currentCategory);
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            if (searchTerm) {
-                filtered = filtered.filter(p => 
-                    p.name.toLowerCase().includes(searchTerm) || 
-                    (p.description && p.description.toLowerCase().includes(searchTerm))
-                );
-            }
+            if (searchTerm) filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm) || (p.description && p.description.toLowerCase().includes(searchTerm)));
             displayProducts(filtered);
         }
-
-        function searchProducts() {
-            filterProducts();
-        }
-
+        function searchProducts() { filterProducts(); }
         function sortProducts() {
             const sortValue = document.getElementById('sortSelect').value;
             let sorted = [...allProducts];
-            if (currentCategory !== 'all') {
-                sorted = sorted.filter(p => p.category === currentCategory);
-            }
+            if (currentCategory !== 'all') sorted = sorted.filter(p => p.category === currentCategory);
             switch(sortValue) {
-                case 'price-low':
-                    sorted.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-                    break;
-                case 'price-high':
-                    sorted.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
-                    break;
-                case 'newest':
-                default:
-                    sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                case 'price-low': sorted.sort((a, b) => parseFloat(a.price) - parseFloat(b.price)); break;
+                case 'price-high': sorted.sort((a, b) => parseFloat(b.price) - parseFloat(a.price)); break;
+                case 'newest': default: sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             }
             displayProducts(sorted);
         }
