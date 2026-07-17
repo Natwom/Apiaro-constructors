@@ -2069,3 +2069,280 @@ img {
         grid-column: 3;
     }
 }
+
+
+
+/* ============================================
+   ORDERS PAGE ENHANCEMENTS
+   ============================================ */
+
+/* Track Form Layout */
+.track-form {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    align-items: end;
+}
+
+.track-form .form-group {
+    margin-bottom: 0;
+}
+
+.track-form .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+}
+
+.track-form .form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.track-form .form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+.track-form .btn {
+    height: fit-content;
+}
+
+/* Track Card */
+.track-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.track-card h2 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.track-card > p {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+}
+
+/* Order Card Header - Light version for consistency */
+.order-card-header {
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.order-card-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: white;
+}
+
+.order-date {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    color: rgba(255,255,255,0.9);
+}
+
+.order-badges {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Order Info Grid */
+.order-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.order-info-grid h4 {
+    color: var(--primary-color);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+}
+
+.order-info-grid p {
+    margin: 0 0 0.25rem;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+}
+
+.order-info-grid p strong {
+    color: var(--primary-color);
+}
+
+/* Order Items List */
+.order-items-list {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+/* Order Item Row - FIXED LAYOUT */
+.order-item-row {
+    display: grid;
+    grid-template-columns: 80px 2fr 1fr;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.order-item-row:last-child {
+    border-bottom: none;
+}
+
+.order-item-img {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bg-light);
+}
+
+.order-item-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.order-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.order-item-name {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 1rem;
+}
+
+.order-item-qty {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.order-item-price {
+    text-align: right;
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+/* Order Notes */
+.order-notes {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg-light);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    color: var(--text-dark);
+}
+
+.order-notes strong {
+    color: var(--primary-color);
+}
+
+/* Empty State for Orders */
+.empty-cart-page {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+}
+
+.empty-cart-page i {
+    font-size: 4rem;
+    color: #ddd;
+    margin-bottom: 1rem;
+}
+
+.empty-cart-page h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-dark);
+}
+
+.empty-cart-page p {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+}
+
+/* Notification */
+.notification {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: var(--success-color);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    z-index: 9999;
+    animation: slideIn 0.3s ease;
+    font-weight: 500;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+/* Responsive Orders */
+@media (max-width: 768px) {
+    .track-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .order-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .order-item-row {
+        grid-template-columns: 60px 1fr auto;
+        gap: 0.75rem;
+    }
+    
+    .order-item-img {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .order-item-price {
+        grid-column: 3;
+        text-align: right;
+    }
+    
+    .order-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
